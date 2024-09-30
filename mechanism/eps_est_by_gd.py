@@ -9,23 +9,28 @@ from algorithms import NoisyArgMax, OutputType, NoisySum, NoisyMax, SVT1
 lower = 1.5
 upper = 2.0
 
-alpha = 0.01
+alpha = 10 # 0.01
 sample_num = 1000
 epochs = 1500
 lr = 0.1
 input_size = 4
 eps = 0.1
-alg = SVT1(eps, t=0.5)
+# alg = SVT1(eps, t=0.5)
+alg = NoisyArgMax(eps)
 
 best_eps = []
 
 tmp_input = torch.rand(input_size, requires_grad=True)
 if alg.output_type == OutputType.DISC:
-    # 必ずしも以下をsortする必要はない
-    outputs = [alg.mech(tmp_input).tolist() for _ in range(sample_num)]
-    print("outputs: ", outputs)
-    output_cand = set(outputs)
-    print("output_cand: ", output_cand)
+    # NoisyArgMaxに特化した実装
+    outputs = [alg.mech(tmp_input).to(int).item() for _ in range(sample_num)]
+    outputs = set(outputs)
+    outputs = sorted(outputs)
+    output_split = [outputs[0] - (outputs[1] - outputs[0]) / 2]
+    for i in range(0, len(outputs)-1):
+        output_split.append((outputs[i] + outputs[i+1]) / 2)
+    output_split.append(outputs[-1] + (outputs[-1] - outputs[-2]) / 2)
+    output_cand = [(output_split[j], output_split[j+1]) for j in range(len(output_split)-1)]
 elif alg.output_type == OutputType.CONT:
     split_num = 100
     outputs = [alg.mech(tmp_input) for _ in range(sample_num)]
@@ -39,7 +44,10 @@ for output in output_cand:
     for i in range(epochs):
         y1_list = torch.stack([alg.mech(x1) for _ in range(sample_num)])
         if alg.output_type == OutputType.DISC:
-            z1 = torch.sum(torch.exp(-alpha * torch.pow(y1_list - output, 2)))
+            # 結局連続的な場合と同じように出力集合に含まれるかの判定を行う
+            lower, upper = output
+            z1 = torch.sum(torch.sigmoid(alpha * (y1_list - lower) * (upper - y1_list)))
+            # z1 = torch.sum(torch.exp(-alpha * torch.pow(y1_list - output, 2)))
         elif alg.output_type == OutputType.CONT:
             lower, upper = output
             z1 = torch.sum(torch.sigmoid(alpha * (y1_list - lower) * (upper - y1_list)))
@@ -59,12 +67,14 @@ for output in output_cand:
 
         y2_list = torch.stack([alg.mech(x2) for _ in range(sample_num)])
         if alg.output_type == OutputType.DISC:
-            z2 = torch.sum(torch.exp(-alpha * torch.pow(y2_list - output, 2)))
+            # z2 = torch.sum(torch.exp(-alpha * torch.pow(y2_list - output, 2)))
+            lower, upper = output
+            z2 = torch.sum(torch.sigmoid(alpha * (y2_list - lower) * (upper - y2_list)))
         elif alg.output_type == OutputType.CONT:
             lower, upper = output
             z2 = torch.sum(torch.sigmoid(alpha * (y2_list - lower) * (upper - y2_list)))
         z2.backward()
-        print("x2: ", x2.grad)
+        # print("x2: ", x2.grad)
         tmp_lr = torch.full_like(x2, lr)
         next_x2 = []
         for j in range(len(x2)):
@@ -82,16 +92,23 @@ for output in output_cand:
     est_sample_num = 10000
     est_epoch = 100
     est_eps_list = []
+    zero_cnt = 0
     for epoch in range(est_epoch):
         opt_y1 = torch.stack([alg.mech(x1) for _ in range(est_sample_num)])
         opt_y2 = torch.stack([alg.mech(x2) for _ in range(est_sample_num)])
         if alg.output_type == OutputType.DISC:
-            opt_z1 = torch.sum(torch.exp(-alpha * torch.pow(opt_y1 - output, 2)))
-            opt_z2 = torch.sum(torch.exp(-alpha * torch.pow(opt_y2 - output, 2)))
+            # opt_z1 = torch.sum(torch.exp(-alpha * torch.pow(opt_y1 - output, 2)))
+            # opt_z2 = torch.sum(torch.exp(-alpha * torch.pow(opt_y2 - output, 2)))
+            lower, upper = output
+            opt_z1 = torch.sum(torch.sigmoid(alpha * (opt_y1 - lower) * (upper - opt_y1)))
+            opt_z2 = torch.sum(torch.sigmoid(alpha * (opt_y2 - lower) * (upper - opt_y2)))
         elif alg.output_type == OutputType.CONT:
             lower, upper = output
             opt_z1 = torch.sum(torch.sigmoid(alpha * (opt_y1 - lower) * (upper - opt_y1)))
             opt_z2 = torch.sum(torch.sigmoid(alpha * (opt_y2 - lower) * (upper - opt_y2)))
+        if opt_z1.item() == 0 or opt_z2.item() == 0:
+            zero_cnt += 1
+            continue
         tmp_est_eps = np.log(opt_z1.item()/opt_z2.item())
         est_eps_list.append(tmp_est_eps)
     # TODO: εの平均値を取るよりも出力集合に含まれる回数の平均値をそれぞれとったほうが良さそう。
@@ -109,6 +126,14 @@ for output in output_cand:
         plt.plot(epochs_list, x1_t[k], label=f"x1_{k}")
         plt.plot(epochs_list, x2_t[k], label=f"x2_{k}")
     plt.legend()
+    plt.show()
+
+    est_epoch_list = [i for i in range(est_epoch - zero_cnt)]
+    plt.plot(est_epoch_list, est_eps_list, label="eps")
+    plt.legend()
+    plt.show()
+
+    plt.hist(est_eps_list, bins=100)
     plt.show()
 
 print("best_eps: ", best_eps)
