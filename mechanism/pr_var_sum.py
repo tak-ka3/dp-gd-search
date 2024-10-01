@@ -16,6 +16,8 @@ def convolve_distributions(pdfs, x_range):
     
     # 各PDFを順次畳み込み
     for pdf in pdfs[1:]:
+        # 本来であればx_rangeの範囲外からも畳み込むべきだが、それができていない
+        # 範囲外の部分が0と見做せるほど小さいと考えるので問題ないか
         result_pdf = np.convolve(result_pdf, pdf, mode='same') * (x_range[1] - x_range[0])
     
     return result_pdf
