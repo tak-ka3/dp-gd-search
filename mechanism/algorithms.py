@@ -9,8 +9,10 @@ class InputPattern(Enum):
     ONE_ONE_DIFF = 2
 
 class OutputType(Enum):
-    DISC = 1
-    CONT = 2
+    DISC_SCALAR = 1
+    CONT_SCALAR = 2
+    DISC_VEC = 3
+    CONT_VEC = 4
 
 def softargmax1d(input, beta=10):
     *_, n = input.shape
@@ -33,7 +35,7 @@ class NoisySum(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.CONT
+        self.output_type = OutputType.CONT_SCALAR
     def mech(self, x, n_samples: int = 1):
         return torch.sum(x) + torch.distributions.laplace.Laplace(0, 1 * len(x) / self.eps).sample()
     def get_eps(self, x, n_samples: int = 1):
@@ -43,7 +45,7 @@ class NoisyMax(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.CONT
+        self.output_type = OutputType.CONT_SCALAR
     def mech(self, x, n_samples: int = 1):
         noisy_vec = []
         for i in range(len(x)):
@@ -56,7 +58,7 @@ class NoisyArgMax(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_SCALAR
     def mech(self, x, n_samples: int = 1):
         noisy_vec = []
         for i in range(len(x)):
@@ -70,7 +72,7 @@ class NoisyMaxExp(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.CONT
+        self.output_type = OutputType.CONT_SCALAR
     def mech(self, x, n_samples: int = 1):
         noisy_vec = []
         for i in range(len(x)):
@@ -83,7 +85,7 @@ class NoisyArgMaxExp(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_SCALAR
     def mech(self, x, n_samples: int = 1):
         noisy_vec = []
         for i in range(len(x)):
@@ -97,12 +99,13 @@ class NoisyHist1(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ONE_ONE_DIFF
-        self.output_type = OutputType.CONT
+        self.output_type = OutputType.CONT_VEC
     def mech(self, x, n_samples: int = 1):
-        l = x.shape[0]
-        v = np.atleast_2d(x)
-
-        m = v + np.random.laplace(scale=1/self.eps, size=(n_samples, l))
+        noise = torch.distributions.laplace.Laplace(0, 1 / self.eps).sample(x.size())
+        m = x + noise
+        # np.random.laplace(scale=1/self.eps, size=(n_samples, l))
+        # torch.distributions.laplace.Laplace(0, 1 / (self.eps/2)).sample()
+        # TODO: n_samplesが1であることを想定した実装
         return m
     def get_eps(self, x, n_samples: int = 1):
         return self.eps * n_samples
@@ -112,7 +115,7 @@ class NoisyHist2(Alg):
     def __init__(self, eps):
         self.eps = eps
         self.input_pattern = InputPattern.ONE_ONE_DIFF
-        self.output_type = OutputType.CONT
+        self.output_type = OutputType.CONT_VEC
     def mech(self, x, n_samples: int = 1):
         l = x.shape[0]
         v = np.atleast_2d(x)
@@ -136,7 +139,7 @@ class SVT1(Alg):
         self.c = c  # maximum number of queries answered with 1
         self.t = t
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_VEC
     def mech(self, a, n_samples: int = 1):
         """
         TODO: n_samples = 1を想定した実装となっている
@@ -173,7 +176,7 @@ class SVT2(Alg):
         self.c = c  # maximum number of queries answered with 1
         self.t = t
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_VEC
     def mech(self, x, n_samples: int = 1):
         """
         Args:
@@ -265,7 +268,7 @@ class SVT4(Alg):
         self.c = c  # maximum number of queries answered with 1
         self.t = t
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_VEC
     def mech(self, x, n_samples: int = 1):
         """
         Args:
@@ -308,7 +311,7 @@ class SVT5(Alg):
         self.c = c  # maximum number of queries answered with 1
         self.t = t
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_VEC
     def mech(self, x, n_samples: int = 1):
         """
         Args:
@@ -338,7 +341,7 @@ class SVT6(Alg):
         self.c = c  # maximum number of queries answered with 1
         self.t = t
         self.input_pattern = InputPattern.ALL_ONE_DIFF
-        self.output_type = OutputType.DISC
+        self.output_type = OutputType.DISC_VEC
     def mech(self, x, n_samples: int = 1):
         """
         Args:
