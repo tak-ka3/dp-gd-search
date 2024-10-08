@@ -30,12 +30,9 @@ def transform_logexpsum(X_vals, X_pdf_vals, beta=10):
 X_val: 変換前の確率密度関数の範囲を表す配列
 X_pdf_val: 変換前の確率密度関数の値の配列
 transform_func: 変換のための関数
-多くがpdf_funcがラプラス分布になると考えられる？
-例えばSumを取るような時に、そのそれぞれの要素がラプラス分布以外の確率分布に従うことはあるのか？
-- 線形変換(a倍、+bなど)ではラプラス分布は変わる？→パラメタは変わるが、ラプラス分布であることは変わらない
-- 2乗・expをとるなどではラプラス分布は変わる？→
 """
 def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tuple[np.ndarray, np.ndarray]:
+    assert X_val.size == X_pdf_val.size
     Y_val = transform_func(X_val) # Y = F(X)
     # 逆関数を数値的に計算する
     x_inv, y_inv = inv_calc(X_val, Y_val)
@@ -43,8 +40,28 @@ def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tu
     point_num = X_val.size * 10
     x_splined, y_splined = spline1(x_inv, y_inv, point_num)
     dx_dy = diff_calc(x_splined, y_splined, point_num)
-    Y_pdf_val = X_pdf_val * dx_dy # 要素ごとに掛ける
+    # 改めてスプライン補間によってX軸を揃える
+    x_splined_new, X_pdf_val_new = spline1(X_val, X_pdf_val, point_num)
+    assert (x_splined == x_splined_new).all()
+    Y_pdf_val = X_pdf_val_new * np.abs(dx_dy) # 要素ごとに掛ける
     return x_splined, Y_pdf_val
+
+"""
+複数の確率変数に対して変数変換を行う
+"""
+def trasform_vars(X_vals: np.ndarray, X_pdf_vals: np.ndarray, transform_func) -> tuple[np.ndarray, np.ndarray]:
+    assert type(X_pdf_vals[0]) == np.ndarray or type(X_pdf_vals[0]) == list
+    if type(X_vals[0]) != np.ndarray and type(X_vals[0]) != list:
+        X_vals_2d = np.array([X_vals for _ in range(len(X_pdf_vals))])
+    else:
+        assert len(X_vals_2d) == len(X_pdf_vals)
+    Y_vals = []
+    Y_pdf_vals = []
+    for X_val, X_pdf_val in zip(X_vals_2d, X_pdf_vals):
+        Y_val, Y_pdf_val = trasform_var(X_val, X_pdf_val, transform_func)
+        Y_vals.append(Y_val)
+        Y_pdf_vals.append(Y_pdf_val)
+    return Y_vals, Y_pdf_vals
 
 """
 vals: 確率密度関数のxの範囲(=確率変数の範囲)の二次元配列
@@ -92,6 +109,9 @@ def test_func(x: np.array):
     # return np.exp(x)
     return x
 
+"""
+ref: https://qiita.com/Ken227/items/aee6c82ec6bab92e6abf
+"""
 def spline1(x,y,point):
     f = interpolate.interp1d(x, y,kind="cubic")
     # x座標を等間隔にしてくれる
@@ -107,6 +127,7 @@ def inv_calc(x, y):
 
 """
 dy/dxを求める関数
+TODO: 端の部分の計算は近似の誤差が大きくなることが予想されるので、省いても良いかも。
 """
 def diff_calc(x, y, point):
     x_diff = []
@@ -118,8 +139,10 @@ def diff_calc(x, y, point):
     x_diff.append(x_diff[-1])
     return x_diff
 
-def laplace_func(x, loc=0, sensitivity=1, eps=0.1):
+def laplace_func(x, loc, sensitivity=1, eps=0.1):
     b = sensitivity / eps
+    if type(loc) == np.ndarray or type(loc) == list:
+        return [np.exp(-np.abs(x - val)/b) / (2*b) for val in loc]
     return np.exp(-np.abs(x - loc)/b) / (2*b)
 
 # 元の確率変数の確率密度関数であるoriginal_fを仮定した変数変換
@@ -144,39 +167,42 @@ def transform(data1: np.ndarray, data2: np.ndarray, noise_func, func) -> tuple[n
     sample_num = 1000
     y_sample_data1 = [np.random.laplace(data)  for data in data1 for _ in range(sample_num)]
     y_sample_data2 = [np.random.laplace(data)  for data in data2 for _ in range(sample_num)]
-    print(min(min(y_sample_data1), min(y_sample_data2))*10)
-    print(max(max(y_sample_data1), max(y_sample_data2))*10)
     range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2))*10, max(max(y_sample_data1), max(y_sample_data2))*10, 1000)
+
+    # --------------
     # xのそれぞれの要素にlaplace(0, 1/0.1)のノイズを加えるとする
-    y = func(range_x)
+    # y = func(range_x)
     
-    # 逆関数を数値的に計算する
-    x_inv, y_inv = inv_calc(range_x, y)
-    # スプライン補間の際のデータ点の数
-    point_num = range_x.size * 10
-    x_splined, y_splined = spline1(x_inv, y_inv, point_num)
-    plt.scatter(x_splined, y_splined, s=2, color="red")
+    # # 逆関数を数値的に計算する
+    # x_inv, y_inv = inv_calc(range_x, y)
+    # # スプライン補間の際のデータ点の数
+    # point_num = range_x.size * 10
+    # x_splined, y_splined = spline1(x_inv, y_inv, point_num)
+    # plt.scatter(x_splined, y_splined, s=2, color="red")
+    # plt.show()
+
+    # # X座標ごとに微分を求める
+    # x_diff = diff_calc(x_splined, y_splined, point_num)
+    # plt.scatter(x_splined, x_diff, s=0.1)
+    # plt.show()
+
+    # transformed_pdf1 = var_trasform(y_splined, x_diff, noise_func, loc=data1)
+    # transformed_pdf2 = var_trasform(y_splined, x_diff, noise_func, loc=data2)
+    # -------
+
+    # laplace_funを修正する
+    x_splined1, transformed_pdf1 = trasform_vars(range_x, laplace_func(range_x, loc=data1), lambda x: x)
+    x_splined2, transformed_pdf2 = trasform_vars(range_x, laplace_func(range_x, loc=data2), lambda x: x)
+
+    # assert (x_splined1 == x_splined2).all()
+    x_splined = x_splined1
+
+    # lambda x: x を適用後の確率密度関数を可視化する
+    for x_val, pdf1, pdf2 in zip(x_splined, transformed_pdf1, transformed_pdf2):
+        plt.scatter(x_val, pdf1, s=0.5, color="blue")
+        plt.scatter(x_val, pdf2, s=0.5, color="red")
     plt.show()
 
-    # X座標ごとに微分を求める
-    x_diff = diff_calc(x_splined, y_splined, point_num)
-    plt.scatter(x_splined, x_diff, s=0.1)
-    plt.show()
-
-    transformed_pdf1 = var_trasform(y_splined, x_diff, noise_func, loc=data1)
-    transformed_pdf2 = var_trasform(y_splined, x_diff, noise_func, loc=data2)
-
-    for pdf1, pdf2 in zip(transformed_pdf1, transformed_pdf2):
-        plt.scatter(x_splined, pdf1, s=0.5, color="blue")
-        plt.scatter(x_splined, pdf2, s=0.5, color="red")
-    plt.show()
-
-    # 区分級数法（積分を台形として近似）により確率密度関数から確率を求める
-
-
-    # 中央値は異なるが、スケールは同じ確率分布に従う確率変数のリダクションを考える
-    # そうするとx_splinedの値が確率変数によって異なるので畳み込みがうまくいかない
-    # np.convolutionalを使うためにもx_rangeを揃える必要がある
     if type(transformed_pdf1[0]) == np.ndarray:
         sum_x1, sum_pdf1 = transform_sum(x_splined, transformed_pdf1)
         sum_x2, sum_pdf2 = transform_sum(x_splined, transformed_pdf2)
