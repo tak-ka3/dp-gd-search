@@ -2,6 +2,7 @@ import numpy as np
 from scipy import interpolate
 
 """
+スプライン補間を行う関数
 ref: https://qiita.com/Ken227/items/aee6c82ec6bab92e6abf
 """
 def spline1(x,y,point):
@@ -11,6 +12,9 @@ def spline1(x,y,point):
     Y = f(X)
     return X,Y
 
+"""
+逆関数を求める関数
+"""
 def inv_calc(x, y):
     x_y_arr = np.array([x, y])
     sorted_coord_indices = np.argsort(x_y_arr[1, :])
