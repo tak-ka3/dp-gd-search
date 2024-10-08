@@ -50,7 +50,7 @@ def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tu
 vals: 確率密度関数のxの範囲(=確率変数の範囲)の二次元配列
 pdf_vals: 確率密度関数の二次元配列
 """
-def transform_sum_2(vals, pdf_vals):
+def transform_sum(vals, pdf_vals):
     if type(vals[0]) != np.ndarray and type(vals[0]) != list:
         vals = np.array([vals for _ in range(len(pdf_vals))])
     # 最初の分布のPDFをセット
@@ -128,33 +128,6 @@ def var_trasform(y, x_diff, original_f, loc=0):
         return [original_f(y, loc=val) * np.abs(x_diff) for val in loc]
     else:
         return original_f(y, loc=loc) * np.abs(x_diff)
-
-"""
-x_range: 確率密度関数のxの範囲
-pdfs: 確率密度関数のリスト（二次元配列）
-"""
-def transform_sum(x_range, pdfs):
-    # 最初の分布のPDFをセット
-    result_pdf = pdfs[0]
-
-    dx = x_range[1] - x_range[0]
-
-    conv_x_range = x_range
-
-    x_size = x_range.size
-    conv_x_size = x_size
-    
-    # 各PDFを順次畳み込み
-    for pdf in pdfs[1:]:
-        # 本来であればx_rangeの範囲外からも畳み込むべきだが、それができていない
-        # 範囲外の部分が0と見做せるほど小さいと考えるので問題ないか
-        # https://deepage.net/features/numpy-convolve.html
-        result_pdf = np.convolve(result_pdf, pdf, mode='full') * dx
-        start_val = conv_x_range[0] + x_range[0]
-        conv_x_size = conv_x_size + x_size - 1
-        conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
-    
-    return conv_x_range, result_pdf
 
 """
 data1: 隣接入力データ
