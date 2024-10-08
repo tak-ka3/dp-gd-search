@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import interpolate
 from utils import spline1, inv_calc, diff_calc
+from noise_alg import laplace_func
 
 """
 変数変換の関数
@@ -39,3 +40,26 @@ def trasform_vars(X_vals: np.ndarray, X_pdf_vals: np.ndarray, transform_func) ->
         Y_vals.append(Y_val)
         Y_pdf_vals.append(Y_pdf_val)
     return Y_vals, Y_pdf_vals
+
+"""
+data1: 隣接入力データ
+data2: 隣接入力データ
+noise_func: ノイズを加える関数 (Laplaceメカニズムなど)
+func: ノイズを加えた値に対して施す関数
+    - 出力はスカラーorベクター(funcに依存する)も必要
+"""
+def transform(input_data1: np.ndarray, input_data2: np.ndarray, transform_func, noise_func) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    # TODO: ここのxの範囲を元の確率密度関数が大きい値を取る範囲に限定するのが良さそう。現状確率が0となるような不要な部分も多い
+    # 例えばLaplace分布だと確率が0.9以上が入っているのがどの範囲であるかなどを元にしてxの値を決めるとか
+    # つまりこのxの値は元の確率変数の確率分布の概形（中心、分散など）に依存する
+    # リダクションの場合は要素ごとに入力値が確率分布が変わるので、全ての入力で試す必要がある
+    if noise_func == laplace_func:
+        sample_num = 1000
+        y_sample_data1 = [np.random.laplace(data)  for data in input_data1 for _ in range(sample_num)]
+        y_sample_data2 = [np.random.laplace(data)  for data in input_data2 for _ in range(sample_num)]
+        range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2))*10, max(max(y_sample_data1), max(y_sample_data2))*10, 1000)
+
+        x, pdf1, pdf2 = transform_func(range_x, input_data1, input_data2)
+        return x, pdf1, pdf2
+    else:
+        raise NotImplementedError
