@@ -169,32 +169,12 @@ def transform(data1: np.ndarray, data2: np.ndarray, noise_func, func) -> tuple[n
     y_sample_data2 = [np.random.laplace(data)  for data in data2 for _ in range(sample_num)]
     range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2))*10, max(max(y_sample_data1), max(y_sample_data2))*10, 1000)
 
-    # --------------
-    # xのそれぞれの要素にlaplace(0, 1/0.1)のノイズを加えるとする
-    # y = func(range_x)
-    
-    # # 逆関数を数値的に計算する
-    # x_inv, y_inv = inv_calc(range_x, y)
-    # # スプライン補間の際のデータ点の数
-    # point_num = range_x.size * 10
-    # x_splined, y_splined = spline1(x_inv, y_inv, point_num)
-    # plt.scatter(x_splined, y_splined, s=2, color="red")
-    # plt.show()
-
-    # # X座標ごとに微分を求める
-    # x_diff = diff_calc(x_splined, y_splined, point_num)
-    # plt.scatter(x_splined, x_diff, s=0.1)
-    # plt.show()
-
-    # transformed_pdf1 = var_trasform(y_splined, x_diff, noise_func, loc=data1)
-    # transformed_pdf2 = var_trasform(y_splined, x_diff, noise_func, loc=data2)
-    # -------
-
     # laplace_funを修正する
     x_splined1, transformed_pdf1 = trasform_vars(range_x, laplace_func(range_x, loc=data1), lambda x: x)
     x_splined2, transformed_pdf2 = trasform_vars(range_x, laplace_func(range_x, loc=data2), lambda x: x)
 
-    # assert (x_splined1 == x_splined2).all()
+    # x_splined1/2はそれぞれ二次元配列
+    assert (x_splined1[0] == x_splined2[0]).all()
     x_splined = x_splined1
 
     # lambda x: x を適用後の確率密度関数を可視化する
@@ -210,10 +190,6 @@ def transform(data1: np.ndarray, data2: np.ndarray, noise_func, func) -> tuple[n
         sum_x = sum_x1
     else:
         pass
-
-    # for _ in range(len(sum_pdf1) - len(x_splined)):
-    #     x_splined = np.append(x_splined, x_splined[-1] + x_splined[1] - x_splined[0])
-        
 
     return sum_x, sum_pdf1, sum_pdf2
 
