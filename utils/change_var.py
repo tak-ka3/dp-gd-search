@@ -51,19 +51,23 @@ vals: 確率密度関数のxの範囲(=確率変数の範囲)の二次元配列
 pdf_vals: 確率密度関数の二次元配列
 """
 def transform_sum_2(vals, pdf_vals):
+    if type(vals[0]) != np.ndarray and type(vals[0]) != list:
+        vals = np.array([vals for _ in range(len(pdf_vals))])
     # 最初の分布のPDFをセット
     result_pdf = pdf_vals[0]
     val1 = vals[0]
     x_size = val1.size
     conv_x_size = x_size
-    
+    conv_x_range = val1
+    start_val = val1[0]
+    dx = val1[1] - val1[0]
+
     # 各PDFを順次畳み込み
     for val2, pdf in zip(vals[1:], pdf_vals[1:]):
-        dx = val1[1] - val1[0]
         # TODO: ifとelseの処理が重複している
         if dx == val2[1] - val2[0]:
             result_pdf = np.convolve(result_pdf, pdf, mode='full') * dx
-            start_val = val1[0] + val2[0]
+            start_val = conv_x_range[0] + val2[0]
             conv_x_size = conv_x_size + val2.size - 1
             conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
             val1 = val2
@@ -73,7 +77,7 @@ def transform_sum_2(vals, pdf_vals):
             x2 = np.arange(val2[0], val2[-1], dx)
             pdf2 = f2(x2)
             result_pdf = np.convolve(result_pdf, pdf2, mode='full') * dx
-            start_val = val1[0] + x2[0]
+            start_val = conv_x_range[0] + x2[0]
             conv_x_size = conv_x_size + x2.size - 1
             conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
             val1 = x2
@@ -85,7 +89,7 @@ def transform_sum_2(vals, pdf_vals):
 """
 def test_func(x: np.array):
     # return x**5
-    return np.exp(x)
+    # return np.exp(x)
     return x
 
 def spline1(x,y,point):
@@ -203,7 +207,7 @@ def transform(data1: np.ndarray, data2: np.ndarray, noise_func, func) -> tuple[n
     if type(transformed_pdf1[0]) == np.ndarray:
         sum_x1, sum_pdf1 = transform_sum(x_splined, transformed_pdf1)
         sum_x2, sum_pdf2 = transform_sum(x_splined, transformed_pdf2)
-        assert(sum_x1 == sum_x2)
+        assert (sum_x1 == sum_x2).all()
         sum_x = sum_x1
     else:
         pass
