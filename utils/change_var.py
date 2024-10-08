@@ -1,6 +1,84 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
+from searcher import search_all, search_by_threshold
+
+"""
+laplace分布を前提とした実装
+x_val: 変換前の確率密度関数の範囲を表す配列
+pdf_vals: 変換前の確率密度関数の値の二次元配列
+pdf_func: 変換前の確率変数が従う確率密度関数
+beta: logexpsumのスケールパラメタ
+"""
+def transform_logexpsum(X_vals, X_pdf_vals, beta=10):
+    Y_vals = []
+    Y_pdf_vals = []
+    for X_val, X_pdf_val in zip(X_vals, X_pdf_vals):
+        Y_val, Y_pdf_val = trasform_var(X_val, X_pdf_val, lambda x: np.exp(x*beta))
+        Y_vals.append(Y_val)
+        Y_pdf_vals.append(Y_pdf_val)
+    
+    # 合計の確率密度関数を求めるX軸、つまりY_valsの範囲が異なる恐れがある
+
+        Y_pdf_val = np.exp(Y_pdf_val)
+        Y_pdf_val = Y_pdf_val / np.sum(Y_pdf_val)
+        plt.scatter(Y_val, Y_pdf_val, s=0.5)
+    return (1 / beta) * np.log(np.sum(np.exp(beta * arr)))
+
+"""
+変数変換の関数
+X_val: 変換前の確率密度関数の範囲を表す配列
+X_pdf_val: 変換前の確率密度関数の値の配列
+transform_func: 変換のための関数
+多くがpdf_funcがラプラス分布になると考えられる？
+例えばSumを取るような時に、そのそれぞれの要素がラプラス分布以外の確率分布に従うことはあるのか？
+- 線形変換(a倍、+bなど)ではラプラス分布は変わる？→パラメタは変わるが、ラプラス分布であることは変わらない
+- 2乗・expをとるなどではラプラス分布は変わる？→
+"""
+def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tuple[np.ndarray, np.ndarray]:
+    Y_val = transform_func(X_val) # Y = F(X)
+    # 逆関数を数値的に計算する
+    x_inv, y_inv = inv_calc(X_val, Y_val)
+    # スプライン補間の際のデータ点の数
+    point_num = X_val.size * 10
+    x_splined, y_splined = spline1(x_inv, y_inv, point_num)
+    dx_dy = diff_calc(x_splined, y_splined, point_num)
+    Y_pdf_val = X_pdf_val * dx_dy # 要素ごとに掛ける
+    return x_splined, Y_pdf_val
+
+"""
+vals: 確率密度関数のxの範囲(=確率変数の範囲)の二次元配列
+pdf_vals: 確率密度関数の二次元配列
+"""
+def transform_sum_2(vals, pdf_vals):
+    # 最初の分布のPDFをセット
+    result_pdf = pdf_vals[0]
+    val1 = vals[0]
+    x_size = val1.size
+    conv_x_size = x_size
+    
+    # 各PDFを順次畳み込み
+    for val2, pdf in zip(vals[1:], pdf_vals[1:]):
+        dx = val1[1] - val1[0]
+        # TODO: ifとelseの処理が重複している
+        if dx == val2[1] - val2[0]:
+            result_pdf = np.convolve(result_pdf, pdf, mode='full') * dx
+            start_val = val1[0] + val2[0]
+            conv_x_size = conv_x_size + val2.size - 1
+            conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
+            val1 = val2
+        else:
+            f2 = interpolate.interp1d(val2, pdf, kind="cubic")
+            # 最初の確率密度関数に合わせることになる
+            x2 = np.arange(val2[0], val2[-1], dx)
+            pdf2 = f2(x2)
+            result_pdf = np.convolve(result_pdf, pdf2, mode='full') * dx
+            start_val = val1[0] + x2[0]
+            conv_x_size = conv_x_size + x2.size - 1
+            conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
+            val1 = x2
+
+    return conv_x_range, result_pdf
 
 """
 ノイズを付与後に適用する関数
@@ -11,7 +89,7 @@ def test_func(x: np.array):
     return x
 
 def spline1(x,y,point):
-    f = interpolate.interp1d(x, y,kind="cubic") 
+    f = interpolate.interp1d(x, y,kind="cubic")
     # x座標を等間隔にしてくれる
     X = np.linspace(x[0],x[-1],num=point,endpoint=True)
     Y = f(X)
@@ -23,6 +101,9 @@ def inv_calc(x, y):
     sorted_coord = x_y_arr[:, sorted_coord_indices]
     return sorted_coord[1], sorted_coord[0]
 
+"""
+dy/dxを求める関数
+"""
 def diff_calc(x, y, point):
     x_diff = []
     dx2 = ((x[1] - x[0]) * 2).astype(float)
@@ -44,7 +125,11 @@ def var_trasform(y, x_diff, original_f, loc=0):
     else:
         return original_f(y, loc=loc) * np.abs(x_diff)
 
-def convolve_distributions(pdfs, x_range):
+"""
+x_range: 確率密度関数のxの範囲
+pdfs: 確率密度関数のリスト（二次元配列）
+"""
+def transform_sum(x_range, pdfs):
     # 最初の分布のPDFをセット
     result_pdf = pdfs[0]
 
@@ -116,8 +201,10 @@ def transform(data1: np.ndarray, data2: np.ndarray, noise_func, func) -> tuple[n
     # そうするとx_splinedの値が確率変数によって異なるので畳み込みがうまくいかない
     # np.convolutionalを使うためにもx_rangeを揃える必要がある
     if type(transformed_pdf1[0]) == np.ndarray:
-        sum_x, sum_pdf1 = convolve_distributions(transformed_pdf1, x_splined)
-        sum_x, sum_pdf2 = convolve_distributions(transformed_pdf2, x_splined)
+        sum_x1, sum_pdf1 = transform_sum(x_splined, transformed_pdf1)
+        sum_x2, sum_pdf2 = transform_sum(x_splined, transformed_pdf2)
+        assert(sum_x1 == sum_x2)
+        sum_x = sum_x1
     else:
         pass
 
@@ -136,75 +223,11 @@ if __name__ == "__main__":
     x_data1 = np.array([1.0, 3.0, 5.0, 7.0])
     x_data2 = np.array([2.0, 4.0, 6.0, 8.0])
     x, y1, y2 = transform(x_data1, x_data2, laplace_func, test_func)
-
-    # x = x[1:x.size-1]
-
     plt.scatter(x, y1, color="green", s=0.2, label="x1")
     plt.scatter(x, y2, color="orange", s=0.2, label="x2")
     plt.legend()
     plt.show()
-
-    """
-    確率密度関数の閾値を求める
-    1. 確率密度の上位N%の値を閾値とする
-    2. 確率密度の値の最大値*N%の値を閾値とする
-    """
-    y1_threshold = np.sort(y1)[int(y1.size * 0.01)]
-    y2_threshold = np.sort(y2)[int(y2.size * 0.01)]
-    threshold = max(max(y1)*0.01, max(y2)*0.01) # 値が離散的であるので、ほとんど要素を取れない場合も多い
-    threshold = max(y1_threshold, y2_threshold)
-    # threshold = 1e-10 # ここをプログラムの中で求めたい
-
-    dx = x[1] - x[0]
-    x_size = x.size
-    cum_y1 = []
-    cum_y2 = []
-    tmp_cum_y1 = []
-    tmp_cum_y2 = []
-    for i in range(x_size):
-        if y1[i] > threshold and y2[i] > threshold:
-            if len(tmp_cum_y1) == 0:
-                tmp_cum_y1.append(y1[i] * dx)
-                tmp_cum_y2.append(y2[i] * dx)
-            else:
-                tmp_cum_y1.append(y1[i] * dx + tmp_cum_y1[-1])
-                tmp_cum_y2.append(y2[i] * dx + tmp_cum_y2[-1])
-        else:
-            if len(tmp_cum_y1) != 0:
-                cum_y1.append(tmp_cum_y1)
-                cum_y2.append(tmp_cum_y2)
-                tmp_cum_y1 = []
-                tmp_cum_y2 = []
-
-    # 全探索
-    max_ratio = 0
-    max_ratio2 = 0
-    for y1_list, y2_list in zip(cum_y1, cum_y2):
-        for i in range(len(y1_list)-1):
-            for j in range(i+1, len(y1_list)):
-                tmp_ratio = (y1_list[j] - y1_list[i]) / (y2_list[j] - y2_list[i]) if (y1_list[j] - y1_list[i]) >  (y2_list[j] - y2_list[i]) else (y2_list[j] - y2_list[i]) / (y1_list[j] - y1_list[i])
-                if max_ratio < tmp_ratio:
-                    max_ratio = tmp_ratio
-                    print(f"i: {i}, j: {j}, max_ratio: {max_ratio}")
-
-    # dx = x[1] - x[0]
-    # x_size = x.size
-    # cum_y1 = [y1[0] * dx]
-    # cum_y2 = [y2[0] * dx]
-    # for i in range(x_size-1):
-    #     cum_y1.append(cum_y1[i] + y1[i+1] * dx)
-    #     cum_y2.append(cum_y2[i] + y2[i+1] * dx)
-    # print(cum_y1[-1])
     
-    # 全探索
-    # max_ratio = 0
-    # max_ratio2 = 0
-    # for i in range(x_size-1):
-    #     for j in range(i+1, x_size):
-    #         tmp_ratio = (cum_y1[j] - cum_y1[i]) / (cum_y2[j] - cum_y2[i]) if (cum_y1[j] - cum_y1[i]) >  (cum_y2[j] - cum_y2[i]) else (cum_y2[j] - cum_y2[i]) / (cum_y1[j] - cum_y1[i])
-    #         if max_ratio < tmp_ratio:
-    #             max_ratio = tmp_ratio
-    #             print(f"i: {i}, j: {j}, max_ratio: {max_ratio}")
-    #             print(f"cum_y1[j] - cum_y1[i]: {cum_y1[j] - cum_y1[i]}, cum_y2[j] - cum_y2[i]: {cum_y2[j] - cum_y2[i]}")
+    eps = search_all(x, y1, y2)
 
-    print("estimated eps: ", np.log(max_ratio))
+    print("estimated eps: ", eps)
