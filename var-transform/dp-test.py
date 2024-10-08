@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-from searcher import search_all, search_by_threshold
+from search import search_all, search_by_threshold
 
 """
 laplace分布を前提とした実装
