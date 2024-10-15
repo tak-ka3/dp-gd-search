@@ -123,3 +123,19 @@ def transform_logsumexp(range_x, input_data1, input_data2):
     x1, x2, pdf1, pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=1)
     plt_sca(x1, pdf1, title="after transform_exp_beta_sum", x2=x2, y2=pdf2)
     return transform_log(x1, x2, pdf1, pdf2)
+
+def transform_linear_mul(range_x, pdf_x, a):
+    """
+    ある確率変数に対してaをかける変換
+    """
+    range_y = range_x * a
+    pdf_y = pdf_x / a
+    return range_y, pdf_y
+
+def transform_linear_add(range_x, pdf_x, a):
+    """
+    ある確率変数に対してaを足す変換
+    """
+    range_y = range_x + a
+    pdf_y = pdf_x
+    return range_y, pdf_y
