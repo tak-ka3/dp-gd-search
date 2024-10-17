@@ -129,6 +129,7 @@ def nonuniform_convolution(t_f, t_g, f, g, t_target):
             if t_i < t_target[j]:
                 break
             integral += quad(integrand, t_target[j-1], t_target[j], limit=100)[0]
+            # integral += (integrand(t_target[j]) + integrand(t_target[j-1])) * (t_target[j] - t_target[j-1]) / 2
         conv_result[i] = integral
     return conv_result
 
