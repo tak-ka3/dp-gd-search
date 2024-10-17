@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 from search import search_all, search_by_threshold
 from noise_alg import laplace_func
-from transform_alg import transform_linear_sum
+from transform_alg import transform_linear_sum, transform_logsumexp, trasform_arg_max
 from transform import transform
 
 def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
@@ -13,7 +13,7 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     plt.legend()
     plt.show()
     
-    eps = search_all(x, y1, y2)
+    eps = search_by_threshold(x, y1, y2)
     return eps
 
 if __name__ == "__main__":
