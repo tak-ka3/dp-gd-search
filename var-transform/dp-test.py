@@ -17,7 +17,11 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     plt.legend()
     plt.show()
     
-    eps = search_by_threshold(x, y1, y2)
+    if settings.search["way"] == "all":
+        eps = search_all(x, y1, y2)
+    elif settings.search["way"] == "threshold":
+        th = settings.search["threshold"]
+        eps = search_by_threshold(x, y1, y2, th=th)
     return eps
 
 if __name__ == "__main__":
