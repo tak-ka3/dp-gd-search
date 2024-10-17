@@ -62,9 +62,15 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, transform_func, 
     # リダクションの場合は要素ごとに入力値が確率分布が変わるので、全ての入力で試す必要がある
     if noise_func == laplace_func:
         sample_num = 1000
-        y_sample_data1 = [np.random.laplace(data)  for data in input_data1 for _ in range(sample_num)]
-        y_sample_data2 = [np.random.laplace(data)  for data in input_data2 for _ in range(sample_num)]
-        range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2))*5, max(max(y_sample_data1), max(y_sample_data2))*5, 5000)
+        y_sample_data1 = [np.random.laplace(data, scale=1/0.1)  for data in input_data1 for _ in range(sample_num)]
+        y_sample_data2 = [np.random.laplace(data, scale=1/0.1)  for data in input_data2 for _ in range(sample_num)]
+        # range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2)), max(max(y_sample_data1), max(y_sample_data2)), 5000) # -100, 100
+        # print(min(min(y_sample_data1), min(y_sample_data2)))
+        # print(max(max(y_sample_data1), max(y_sample_data2)))
+        # exit()
+
+        # endopoint=Falseにすることで、最後の値を含まないようにし、完全に等間隔にする
+        range_x = np.linspace(-30, 60, 5000, endpoint=False)
 
         x1, x2, pdf1, pdf2 = transform_func(range_x, input_data1, input_data2)
 
