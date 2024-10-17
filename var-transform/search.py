@@ -6,8 +6,8 @@ def search_by_threshold(x, y1, y2) -> np.float64:
     1. 確率密度の上位N%の値を閾値とする
     2. 確率密度の値の最大値*N%の値を閾値とする
     """
-    y1_threshold = np.sort(y1)[int(y1.size * 0.05)]
-    y2_threshold = np.sort(y2)[int(y2.size * 0.05)]
+    y1_threshold = np.sort(y1)[int(y1.size * 0.1)]
+    y2_threshold = np.sort(y2)[int(y2.size * 0.1)]
     # threshold = max(max(y1)*0.01, max(y2)*0.01) # 値が離散的であるので、ほとんど要素を取れない場合も多い
     threshold = max(y1_threshold, y2_threshold)
     # threshold = 1e-10 # ここをプログラムの中で求めたい
