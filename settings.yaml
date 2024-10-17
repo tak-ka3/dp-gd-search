@@ -1,0 +1,9 @@
+algorithm: "noisy_sum" # "noisy_sum", "noisy_max", "noisy_arg_max"
+input: 
+  lower: -30
+  upper: 50
+  sampling_num: 5000
+integral: "gauss" # "gauss"(ガウス積分), "trapz"(台形近似)
+search: 
+  way: "all" # "all", "threshold"
+  threshold: 0.1

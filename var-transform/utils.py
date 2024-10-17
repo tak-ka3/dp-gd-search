@@ -2,6 +2,7 @@ import numpy as np
 from scipy import interpolate
 from scipy.integrate import quad
 import matplotlib.pyplot as plt
+import yaml
 
 def calc_prob(x, pdf):
     """
@@ -113,7 +114,7 @@ def diff_calc(x, y):
     x_diff.append(x_diff[-1])
     return x_diff
 
-def nonuniform_convolution(t_f, t_g, f, g, t_target):
+def nonuniform_convolution(t_f, t_g, f, g, t_target, integral="quad"):
     """
     Perform convolution of two functions f and g with non-uniformly spaced time points t.
     """
@@ -128,8 +129,10 @@ def nonuniform_convolution(t_f, t_g, f, g, t_target):
         for j in range(1, len(t_target)):
             if t_i < t_target[j]:
                 break
-            integral += quad(integrand, t_target[j-1], t_target[j], limit=100)[0]
-            # integral += (integrand(t_target[j]) + integrand(t_target[j-1])) * (t_target[j] - t_target[j-1]) / 2
+            if integral == "gauss":
+                integral += quad(integrand, t_target[j-1], t_target[j], limit=100)[0]
+            else:
+                integral += (integrand(t_target[j]) + integrand(t_target[j-1])) * (t_target[j] - t_target[j-1]) / 2
         conv_result[i] = integral
     return conv_result
 
@@ -156,3 +159,26 @@ def plt_sca(x1, y1, title="Plot", x2 = None, y2 = None):
     plt.legend()
     plt.show()
     return
+
+class Settings:
+    """
+    設定ファイルを読み込むクラス
+    """
+    def __init__(self, filename):
+        self.filename = filename
+        self.settings = self._read_settings(filename)
+
+    def _read_settings(self, filename):
+        """
+        設定ファイルを読み込む関数
+        """
+        with open("config.yaml") as f:
+            settings = yaml.safe_load(f)
+        return settings
+
+def read_settings(filename):
+    """
+    設定ファイルを読み込む関数
+    """
+    with open(filename, "r") as f:
+        lines = f.readlines()
