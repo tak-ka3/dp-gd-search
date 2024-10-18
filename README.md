@@ -12,7 +12,7 @@ $ python var_transform/dp_test.py
 # ε推定の対象となるアルゴリズム
 algorithm: "noisy_sum" # "noisy_sum", "noisy_max", "noisy_arg_max"
 # ノイズ付与時点の確率変数の範囲の下限と上限。その範囲をsampling_numだけ分割してそれぞれを入力の確率変数とする。(TODO: 本来入力によってノイズ付与時点の確率変数の範囲が決まるが、出力結果を決定的にするために静的に決めている)
-input: 
+noisy_var: 
   lower: -30
   upper: 50
   sampling_num: 5000

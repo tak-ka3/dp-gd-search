@@ -2,7 +2,7 @@ import numpy as np
 from scipy import interpolate
 from noise_alg import laplace_func
 import yaml
-from settings import Config, Settings
+from settings import Settings
 from algorithms import get_alg
 
 def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, settings: Settings) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -14,9 +14,9 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
         - 出力はスカラーorベクター(funcに依存する)も必要
     """
     alg = get_alg(settings.algorithm)
-    lower_bound = settings.input["lower"]
-    upper_bound = settings.input["upper"]
-    sample_num = settings.input["sampling_num"]
+    lower_bound = settings.noisy_var["lower"]
+    upper_bound = settings.noisy_var["upper"]
+    sample_num = settings.noisy_var["sampling_num"]
 
     if noise_func == laplace_func:
         sample_num = 1000
