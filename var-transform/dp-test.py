@@ -6,8 +6,12 @@ from noise_alg import laplace_func
 from transform import transform
 from settings import Settings
 import yaml
+import os
+from datetime import datetime
+import shutil
 
 def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
+    start_time = datetime.now()
     with open("settings.yaml") as f:
         data = yaml.safe_load(f)
     settings = Settings(**data)
@@ -22,6 +26,16 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     elif settings.search["way"] == "threshold":
         th = settings.search["threshold"]
         eps = search_by_threshold(x, y1, y2, th=th)
+
+    # 結果を保存
+    exec_time = datetime.now() - start_time
+    now = datetime.now()
+    formatted_now = now.strftime("%Y-%m-%d_%H:%M:%S")
+    os.makedirs(f"experiments/{formatted_now}", exist_ok=True)
+    data["result"] = {"eps": eps.item(), "time(s)": exec_time.total_seconds()}
+    with open(f"experiments/{formatted_now}/result.yaml", "w") as f:
+        yaml.dump(data, f, encoding='utf-8', allow_unicode=True)
+    
     return eps
 
 if __name__ == "__main__":

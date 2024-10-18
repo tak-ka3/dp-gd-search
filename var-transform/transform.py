@@ -13,25 +13,21 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
     func: ノイズを加えた値に対して施す関数
         - 出力はスカラーorベクター(funcに依存する)も必要
     """
-    config = Config(settings)
-    alg = get_alg(config.algorithm)
-    lower_bound = config.input["lower"]
-    upper_bound = config.input["upper"]
-    sample_num = config.input["sampling_num"]
+    alg = get_alg(settings.algorithm)
+    lower_bound = settings.input["lower"]
+    upper_bound = settings.input["upper"]
+    sample_num = settings.input["sampling_num"]
 
     if noise_func == laplace_func:
         sample_num = 1000
         y_sample_data1 = [np.random.laplace(data, scale=1/0.1)  for data in input_data1 for _ in range(sample_num)]
         y_sample_data2 = [np.random.laplace(data, scale=1/0.1)  for data in input_data2 for _ in range(sample_num)]
-        # range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2)), max(max(y_sample_data1), max(y_sample_data2)), 5000) # -100, 100
-        # print(min(min(y_sample_data1), min(y_sample_data2)))
-        # print(max(max(y_sample_data1), max(y_sample_data2)))
-        # exit()
+        # range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2)), max(max(y_sample_data1), max(y_sample_data2)), 5000)
 
         dx = (upper_bound - lower_bound) / sample_num
         range_x = np.arange(lower_bound, upper_bound, dx)
 
-        x1, x2, pdf1, pdf2 = alg(range_x, input_data1, input_data2, integral=config.integral)
+        x1, x2, pdf1, pdf2 = alg(range_x, input_data1, input_data2, integral=settings.integral)
 
         if x1.size == x2.size and (x1 == x2).all():
             return x1, pdf1, pdf2
