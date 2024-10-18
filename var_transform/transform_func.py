@@ -6,7 +6,7 @@ from noise_alg import laplace_func
 from scipy import integrate
 from utils import spline_eq, spline_func, calc_prob, compress_range, nonuniform_convolution, plt_sca
 
-def transform_sum(vals, pdf_vals, integral="trapz"):
+def transform_sum(vals, pdf_vals, integral="gauss"):
     """
     Args:
         vals: 確率密度関数のxの範囲(=確率変数の範囲)の二次元配列
@@ -59,9 +59,9 @@ def transform_sum(vals, pdf_vals, integral="trapz"):
         return conv_x_range, result_pdf
     # 一つの確率密度関数の横軸の確率変数が等間隔ではない場合
     else:
-        # TODO: ここで確率が0.9以下の範囲になるように、確率変数を圧縮する。ここの圧縮が適切かどうかのFBを受けて再帰的に調節することも可能性としてある
         # TODO: この圧縮は関数呼び出しの時にTrue/Falseを返すようにする
-        comp_val1, comp_result_pdf = compress_range(val1, result_pdf, th=0.9)
+        # comp_val1, comp_result_pdf = compress_range(val1, result_pdf, th=0.9)
+        comp_val1, comp_result_pdf = val1, result_pdf
         conv_x_size = conv_x_range.size
         dx = conv_x_range[1] - conv_x_range[0]
         result_pdf = comp_result_pdf
@@ -71,14 +71,14 @@ def transform_sum(vals, pdf_vals, integral="trapz"):
             # FFTを使って畳み込みを行う
             # val2, pdf = compress_range(val2, pdf, th=0.9)
             print("start conv")
-            conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, val1, integral=integral)
+            conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, val1, integral_way=integral)
             print("end conv")
             print("conv_prob: ", calc_prob(val1, conv_result))
             result_pdf = conv_result
         assert val1.size == result_pdf.size
         return val1, result_pdf
 
-def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="trapz"):
+def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="gauss"):
     """
     配列の確率変数にfuncという関数を適用した後に、合計を取るような関数の変換
     """
@@ -96,7 +96,7 @@ def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="
 
     return sum_x1, sum_x2, sum_pdf1, sum_pdf2
 
-def transform_exp_beta_sum(range_x, input_data1, input_data2, beta, integral="trapz"):
+def transform_exp_beta_sum(range_x, input_data1, input_data2, beta, integral="gauss"):
     return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: np.exp(beta*x), integral=integral)
 
 def transform_log(range_x1, range_x2, pdf1, pdf2):

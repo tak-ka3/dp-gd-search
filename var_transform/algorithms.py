@@ -5,13 +5,13 @@ from transform_func import transform_sum, transform_scalar_mul, transform_div, t
 def get_alg(func_name):
     return alg_dict[func_name]
 
-def noisy_sum(range_x, input_data1, input_data2, integral="trapz"):
+def noisy_sum(range_x, input_data1, input_data2, integral="gauss"):
     """
     配列の要素に1をかけて合計をとる関数
     """
     return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: x)
 
-def noisy_max(range_x, input_data1, input_data2, beta=2.0, integral="trapz"):
+def noisy_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
     x1, x2, pdf1, pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=beta, integral=integral)
     plt_sca(x1, pdf1, title="after transform_exp_beta_sum", x2=x2, y2=pdf2)
     x1_log, x2_log, pdf1_log, pdf2_log =  transform_log(x1, x2, pdf1, pdf2)
@@ -20,7 +20,7 @@ def noisy_max(range_x, input_data1, input_data2, beta=2.0, integral="trapz"):
     plt_sca(x1_result, pdf1_result, title="after transform_log", x2=x2_result, y2=pdf2_result)
     return x1_result, x2_result, pdf1_result, pdf2_result
 
-def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="trapz"):
+def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
     """
     配列の中の最大の要素を持つインデックスを返すアルゴリズム
     TODO: エラーが出るの修正中
@@ -46,7 +46,7 @@ def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="trapz")
     x2_argmax, pdf2_argmax = transform_sum(x2_sm_list, pdf2_sm_list)
     return x1_argmax, pdf1_argmax, x2_argmax, pdf2_argmax
 
-def noisy_hist(range_x, input_data1, input_data2, beta=2.0, integral="trapz"):
+def noisy_hist(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
     """
     ノイズ付きヒストグラムのアルゴリズム
     TODO: 実装中
