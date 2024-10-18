@@ -19,7 +19,7 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     plt.scatter(x, y1, color="green", s=0.2, label="x1")
     plt.scatter(x, y2, color="orange", s=0.2, label="x2")
     plt.legend()
-    plt.show()
+    plt.title("result of the probability density function")
     
     if settings.search["way"] == "all":
         eps = search_all(x, y1, y2)
@@ -32,6 +32,7 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     now = datetime.now()
     formatted_now = now.strftime("%Y-%m-%d_%H:%M:%S")
     os.makedirs(f"experiments/{formatted_now}", exist_ok=True)
+    plt.savefig(f"experiments/{formatted_now}/result.png")
     data["result"] = {"eps": eps.item(), "time(s)": exec_time.total_seconds()}
     with open(f"experiments/{formatted_now}/result.yaml", "w") as f:
         yaml.dump(data, f, encoding='utf-8', allow_unicode=True)

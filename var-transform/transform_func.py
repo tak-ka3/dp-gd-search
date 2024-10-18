@@ -85,15 +85,6 @@ def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="
     # laplace_funを修正する
     x_splined1, transformed_pdf1 = trasform_vars(range_x, laplace_func(range_x, loc=input_data1), func)
     x_splined2, transformed_pdf2 = trasform_vars(range_x, laplace_func(range_x, loc=input_data2), func)
-    # x_splined1/2はそれぞれ二次元配列
-    # assert (x_splined1[0] == x_splined2[0]).all() # 必ずしもx軸を揃える必要はない
-
-    # lambda x: x を適用後の確率密度関数を可視化する
-    for x_val1, x_val2, pdf1, pdf2 in zip(x_splined1, x_splined2, transformed_pdf1, transformed_pdf2):
-        plt.scatter(x_val1, pdf1, s=0.5, color="blue")
-        plt.scatter(x_val2, pdf2, s=0.5, color="red")
-    plt.title("after transform_func before sum")
-    plt.show()
 
     if type(transformed_pdf1[0]) == np.ndarray:
         sum_x1, sum_pdf1 = transform_sum(x_splined1, transformed_pdf1, integral=integral)

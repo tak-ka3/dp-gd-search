@@ -1,2 +1,4 @@
 venv/
-var-transform-exp-result
+var-transform-exp-result/
+experiments/*
+!.gitkeep
