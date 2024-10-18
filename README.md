@@ -16,8 +16,9 @@ input:
   lower: -30
   upper: 50
   sampling_num: 5000
-# 積分
+# 積分の方法
 integral: "gauss" # "gauss"(ガウス積分), "trapz"(台形近似)
+# εの探索の仕方。allは全探索、thresholdは確率密度の値の下位${threshold}は無視する探索。
 search: 
   way: "all" # "all", "threshold"
   threshold: 0.1
