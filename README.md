@@ -3,7 +3,7 @@
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install -r requirements.txt
-$ python var_transform/dp-test.py
+$ python var_transform/dp_test.py
 ```
 
 ## 実験方法
