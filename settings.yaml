@@ -1,5 +1,5 @@
 algorithm: "noisy_sum" # "noisy_sum", "noisy_max", "noisy_arg_max"
-input: 
+noisy_var: 
   lower: -30
   upper: 50
   sampling_num: 5000
