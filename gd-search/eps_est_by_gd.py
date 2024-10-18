@@ -12,13 +12,13 @@ input_size = 4
 
 c_eq = 100 # for E1 == E2
 
-lower_alpha = 100 # 0.01
+lower_alpha = 0.01 # 0.01
 upper_alpha = 100
 mul_alpha = (upper_alpha / lower_alpha)**(1/epochs)
 
 # alg = SVT1(eps, t=0.5)
 eps = 0.1
-alg = NoisyHist1(eps)
+alg = NoisySum(eps)
 
 best_eps = []
 
@@ -185,14 +185,15 @@ for output in output_cand:
         plt.plot(epochs_list, x1_t[k], label=f"x1_{k}")
         plt.plot(epochs_list, x2_t[k], label=f"x2_{k}")
     plt.legend()
-    plt.show()
+    # plt.show()
 
     est_epoch_list = [i for i in range(est_epoch - zero_cnt)]
     plt.plot(est_epoch_list, est_eps_list, label="eps")
     plt.legend()
-    plt.show()
+    # plt.show()
 
     plt.hist(est_eps_list, bins=100)
-    plt.show()
+    # plt.show()
 
 print("best_eps: ", best_eps)
+print("best: ", max(best_eps))
