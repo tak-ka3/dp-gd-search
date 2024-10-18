@@ -23,7 +23,9 @@ search:
   way: "all" # "all", "threshold"
   threshold: 0.1
 ```
-- 実験結果は`experiments`ディレクトリ配下に格納され、上記のsetting.yamlにresultというkeyが追加され、推定されたεの値(eps)と実行時間(time(s))が格納される
+- 実験結果は`experiments`ディレクトリ配下に実行時間ごとにディレクトリが作成され、その中身は以下
+    - result.yaml: settings.yamlにresultというkeyが追加され、推定されたεの値(eps)と実行時間(time(s))が格納されているファイル
+    - result.png: 変換後の最終的な確率分布のグラフ
 
 ## コード解説
 - 基本的に確率変数変換のテスト手法のコードはvar_transformディレクトリ配下に含まれる
