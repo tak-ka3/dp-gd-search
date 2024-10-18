@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from search import *
 
 @dataclass
-class Input:
+class NoisyVar:
     lower: int
     upper: int
     sampling_num: int
@@ -15,6 +15,6 @@ class Search:
 @dataclass
 class Settings:
     algorithm: str
-    input: Input
+    noisy_var: NoisyVar
     integral: str
     search: Search
