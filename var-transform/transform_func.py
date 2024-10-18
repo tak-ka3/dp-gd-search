@@ -1,12 +1,12 @@
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
-from transform import trasform_vars, trasform_var
+from transform_var import trasform_vars, trasform_var
 from noise_alg import laplace_func
 from scipy import integrate
 from utils import spline_eq, spline_func, calc_prob, compress_range, nonuniform_convolution, plt_sca
 
-def transform_sum(vals, pdf_vals):
+def transform_sum(vals, pdf_vals, integral="trapz"):
     """
     Args:
         vals: 確率密度関数のxの範囲(=確率変数の範囲)の二次元配列
@@ -71,33 +71,24 @@ def transform_sum(vals, pdf_vals):
             # FFTを使って畳み込みを行う
             # val2, pdf = compress_range(val2, pdf, th=0.9)
             print("start conv")
-            conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, val1)
+            conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, val1, integral=integral)
             print("end conv")
             print("conv_prob: ", calc_prob(val1, conv_result))
             result_pdf = conv_result
         assert val1.size == result_pdf.size
         return val1, result_pdf
 
-def transform_sum_after_func(range_x, input_data1, input_data2, func):
+def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="trapz"):
     """
     配列の確率変数にfuncという関数を適用した後に、合計を取るような関数の変換
     """
     # laplace_funを修正する
     x_splined1, transformed_pdf1 = trasform_vars(range_x, laplace_func(range_x, loc=input_data1), func)
     x_splined2, transformed_pdf2 = trasform_vars(range_x, laplace_func(range_x, loc=input_data2), func)
-    # x_splined1/2はそれぞれ二次元配列
-    # assert (x_splined1[0] == x_splined2[0]).all() # 必ずしもx軸を揃える必要はない
-
-    # lambda x: x を適用後の確率密度関数を可視化する
-    for x_val1, x_val2, pdf1, pdf2 in zip(x_splined1, x_splined2, transformed_pdf1, transformed_pdf2):
-        plt.scatter(x_val1, pdf1, s=0.5, color="blue")
-        plt.scatter(x_val2, pdf2, s=0.5, color="red")
-    plt.title("after transform_func before sum")
-    plt.show()
 
     if type(transformed_pdf1[0]) == np.ndarray:
-        sum_x1, sum_pdf1 = transform_sum(x_splined1, transformed_pdf1)
-        sum_x2, sum_pdf2 = transform_sum(x_splined2, transformed_pdf2)
+        sum_x1, sum_pdf1 = transform_sum(x_splined1, transformed_pdf1, integral=integral)
+        sum_x2, sum_pdf2 = transform_sum(x_splined2, transformed_pdf2, integral=integral)
         print("prob_x1: ", calc_prob(sum_x1, sum_pdf1))
         print("prob_x2: ", calc_prob(sum_x2, sum_pdf2))
     else:
@@ -105,14 +96,8 @@ def transform_sum_after_func(range_x, input_data1, input_data2, func):
 
     return sum_x1, sum_x2, sum_pdf1, sum_pdf2
 
-def transform_linear_sum(range_x, input_data1, input_data2):
-    """
-    配列の要素に1をかけて合計をとる関数の変換
-    """
-    return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: x)
-
-def transform_exp_beta_sum(range_x, input_data1, input_data2, beta):
-    return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: np.exp(beta*x))
+def transform_exp_beta_sum(range_x, input_data1, input_data2, beta, integral="trapz"):
+    return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: np.exp(beta*x), integral=integral)
 
 def transform_log(range_x1, range_x2, pdf1, pdf2):
     """
@@ -136,15 +121,6 @@ def transform_exp(range_x1, range_x2, pdf1, pdf2):
     plt_sca(range_y1, pdf_y1, title="after transform_exp", x2=range_y2, y2=pdf_y2)
     return range_y1, range_y2, pdf_y1, pdf_y2
 
-def transform_logsumexp(range_x, input_data1, input_data2, beta=2.0):
-    x1, x2, pdf1, pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=beta)
-    plt_sca(x1, pdf1, title="after transform_exp_beta_sum", x2=x2, y2=pdf2)
-    x1_log, x2_log, pdf1_log, pdf2_log =  transform_log(x1, x2, pdf1, pdf2)
-    x1_result, pdf1_result = transform_scalar_mul(x1_log, pdf1_log, 1/beta)
-    x2_result, pdf2_result = transform_scalar_mul(x2_log, pdf2_log, 1/beta)
-    plt_sca(x1_result, pdf1_result, title="after transform_log", x2=x2_result, y2=pdf2_result)
-    return x1_result, x2_result, pdf1_result, pdf2_result
-
 def transform_laplace_exp(range_x, input_data):
     x_list, pdf_list = [], []
     for mu in input_data:
@@ -152,43 +128,6 @@ def transform_laplace_exp(range_x, input_data):
         x_list.append(x)
         pdf_list.append(pdf)
     return x_list, pdf_list
-
-def trasform_arg_max(range_x, input_data1, input_data2, beta=2.0):
-    """
-    配列の中の最大の要素を持つインデックスを返すアルゴリズム
-    """
-    print("start transform_arg_max")
-    sum_x1, sum_x2, sum_pdf1, sum_pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=1.0)
-    print("start transform_laplace_exp")
-    x1_list, pdf1_list = transform_laplace_exp(range_x, input_data1)
-    x2_list, pdf2_list = transform_laplace_exp(range_x, input_data2)
-    size_n = len(x1_list)
-    indices = np.linspace(0, 1, size_n)
-    x1_sm_list, pdf1_sm_list, x2_sm_list, pdf2_sm_list = [], [], [], []
-    x1_sm_list_all = [transform_scalar_mul(*transform_div(x, pdf, sum_x1, sum_pdf1), ind * (size_n-1)) for ind, x, pdf in zip(indices, x1_list, pdf1_list)]
-    x2_sm_list_all = [transform_scalar_mul(*transform_div(x, pdf, sum_x2, sum_pdf2), ind * (size_n-1)) for ind, x, pdf in zip(indices, x2_list, pdf2_list)]
-    print("start transform_sum")
-    for (x1_sm, pdf1_sm), (x2_sm, pdf2_sm) in zip(x1_sm_list_all, x2_sm_list_all):
-        x1_sm_list.append(x1_sm)
-        pdf1_sm_list.append(pdf1_sm)
-        x2_sm_list.append(x2_sm)
-        pdf2_sm_list.append(pdf2_sm)
-    print(x1_sm_list)
-    x1_argmax, pdf1_argmax = transform_sum(x1_sm_list, pdf1_sm_list)
-    x2_argmax, pdf2_argmax = transform_sum(x2_sm_list, pdf2_sm_list)
-    return x1_argmax, pdf1_argmax, x2_argmax, pdf2_argmax
-
-def transform_noisy_hist(range_x, input_data1, input_data2, beta=2.0):
-    """
-    ノイズ付きヒストグラムのアルゴリズム
-    """
-    x1, x2, pdf1, pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=beta)
-    plt_sca(x1, pdf1, title="after transform_exp_beta_sum", x2=x2, y2=pdf2)
-    x1_log, x2_log, pdf1_log, pdf2_log =  transform_log(x1, x2, pdf1, pdf2)
-    x1_result, pdf1_result = transform_scalar_mul(x1_log, pdf1_log, 1/beta)
-    x2_result, pdf2_result = transform_scalar_mul(x2_log, pdf2_log, 1/beta)
-    plt_sca(x1_result, pdf1_result, title="after transform_log", x2=x2_result, y2=pdf2_result)
-    return x1_result, x2_result, pdf1_result, pdf2_result
 
 def transform_mul(range_x, pdf_x, range_y, pdf_y, point_num=5000):
     """
