@@ -167,7 +167,7 @@ def plt_2d(x_list, y_list, labels=None, title="Plot"):
         plt.scatter(x, y, label=label, s=0.5)
     plt.title(title)
     plt.legend()
-    plt.show()
+    # plt.show()
     return
 
 class Settings:

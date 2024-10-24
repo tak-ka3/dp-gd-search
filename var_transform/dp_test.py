@@ -41,11 +41,13 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     exec_time = datetime.now() - start_time
     now = datetime.now()
     formatted_now = now.strftime("%Y-%m-%d_%H:%M:%S")
-    os.makedirs(f"experiments/{formatted_now}", exist_ok=True)
-    plt.savefig(f"experiments/{formatted_now}/result.png")
+    os.makedirs(f"experiments/{settings.algorithm}", exist_ok=True)
+    dir_path = f"experiments/{settings.algorithm}/{formatted_now}"
+    os.makedirs(dir_path, exist_ok=True)
+    plt.savefig(f"{dir_path}/result.png")
     data["result"] = {"eps": eps.item(), "time(s)": exec_time.total_seconds()}
     data["input"] = {"data1": input_data1.tolist(), "data2": input_data2.tolist()}
-    with open(f"experiments/{formatted_now}/result.yaml", "w") as f:
+    with open(f"{dir_path}/result.yaml", "w") as f:
         yaml.dump(data, f, encoding='utf-8', allow_unicode=True)
     
     return eps
