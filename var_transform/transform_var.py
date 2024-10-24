@@ -24,7 +24,6 @@ def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tu
     start_ind, end_ind, X_pdf_val_new = spline_func(X_val, X_pdf_val, y_splined)
     # plt_sca(x_splined[start_ind:end_ind], X_pdf_val_new, "after spline", x_splined[start_ind:end_ind], [laplace_func(np.log(x), 0) for x in x_splined[start_ind:end_ind]])
     Y_pdf_val = X_pdf_val_new * np.abs(dx_dy[start_ind:end_ind]) # 要素ごとに掛ける
-    print("after transform, the prob", calc_prob(x_splined[start_ind:end_ind], Y_pdf_val))
     return x_splined[start_ind:end_ind], Y_pdf_val
 
 def trasform_vars(X_vals: np.ndarray, X_pdf_vals: np.ndarray, transform_func) -> tuple[np.ndarray, np.ndarray]:

@@ -59,8 +59,6 @@ def transform_sum(vals, pdf_vals, integral="gauss"):
         return conv_x_range, result_pdf
     # 一つの確率密度関数の横軸の確率変数が等間隔ではない場合
     else:
-        # TODO: この圧縮は関数呼び出しの時にTrue/Falseを返すようにする
-        # comp_val1, comp_result_pdf = compress_range(val1, result_pdf, th=0.9)
         comp_val1, comp_result_pdf = val1, result_pdf
         conv_x_size = conv_x_range.size
         dx = conv_x_range[1] - conv_x_range[0]
@@ -69,12 +67,20 @@ def transform_sum(vals, pdf_vals, integral="gauss"):
         # 各PDFを順次畳み込み
         for val2, pdf in zip(vals[1:], pdf_vals[1:]):
             # FFTを使って畳み込みを行う
-            # val2, pdf = compress_range(val2, pdf, th=0.9)
             print("start conv")
-            conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, val1, integral_way=integral)
+            vals = []
+            # 全ての確率変数の和の組み合わせを計算する
+            for v1 in val1:
+                for v2 in val2:
+                    vals.append(v1 + v2)
+            np_vals = np.unique(np.array(vals))
+            split_num = np_vals.size // val1.size
+            np_vals = np_vals[::split_num]
+            conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, np_vals, integral_way=integral)
             print("end conv")
-            print("conv_prob: ", calc_prob(val1, conv_result))
+            print("conv_prob: ", calc_prob(np_vals, conv_result))
             result_pdf = conv_result
+            val1 = np_vals
         assert val1.size == result_pdf.size
         return val1, result_pdf
 
@@ -156,24 +162,28 @@ def transform_div(range_x, pdf_x, range_y,  pdf_y, point_num=5000):
     """
     Z = X / Yの変換
     """
-    # TODO: z = x / yの確率変数の範囲の探し方。必ずしも正負を考えると端点を考えれば良いわけではない。
-    max_max_z = max(range_x) / max(range_y)
-    max_min_z = max(range_x) / min(range_y)
-    min_max_z = min(range_x) / max(range_y)
-    min_min_z = min(range_x) / min(range_y)
-    max_z = max(max_max_z, max_min_z, min_max_z, min_min_z)
-    min_z = min(max_max_z, max_min_z, min_max_z, min_min_z)
-    range_z = np.linspace(min_z, max_z, point_num)
+    range_z = []
+    for y_ind in range(len(range_y)):
+        if range_y[y_ind] == 0:
+            continue
+        for x_ind in range(len(range_x)):            
+            range_z.append(range_x[x_ind] / range_y[y_ind])
+    # sorted_range_z = np.array(sorted(range_z)[::len(range_x)])
+    np_range_z = np.array(range_z)
+    unique_range_z = np.unique(np_range_z)
+    split_num = unique_range_z.size // range_x.size
+    split_range_z = unique_range_z[::split_num]
     f_interp = interpolate.CubicSpline(range_x, pdf_x, bc_type='natural', extrapolate=False)
     g_interp = interpolate.CubicSpline(range_y, pdf_y, bc_type='natural', extrapolate=False)
     pdf_z = []
-    min_range_x = min(range_x)
-    max_range_x = max(range_x)
-    for z in range_z:
-        integrand = lambda x: f_interp(z * x) * g_interp(x) * np.abs(x)
-        integral = integrate.quad(integrand, min_range_x, max_range_x, limit=100)[0]
+    min_range_y = min(range_y)
+    max_range_y = max(range_y)
+    for z in split_range_z:
+        integrand = lambda x: f_interp(z * x) * g_interp(x) * np.abs(x) if min(range_x) <= z*x <= max(range_x) else 0
+        integral = integrate.quad(integrand, min_range_y, max_range_y, limit=100)[0]
         pdf_z.append(integral)
-    return range_z, pdf_z
+    print("div after: ", calc_prob(split_range_z, np.array(pdf_z)))
+    return split_range_z, np.array(pdf_z)
 
 def transform_scalar_mul(range_x, pdf_x, a):
     """

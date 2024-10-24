@@ -1,6 +1,7 @@
 import numpy as np
 from utils import plt_sca
 from transform_func import transform_sum, transform_scalar_mul, transform_div, transform_log, transform_exp_beta_sum, transform_laplace_exp, transform_sum_after_func
+from matplotlib import pyplot as plt
 
 def get_alg(func_name):
     return alg_dict[func_name]
@@ -26,24 +27,25 @@ def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss")
     TODO: エラーが出るの修正中
     """
     print("start transform_arg_max")
-    sum_x1, sum_x2, sum_pdf1, sum_pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=1.0)
+    sum_x1, sum_x2, sum_pdf1, sum_pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=1.0, integral=integral)
     print("start transform_laplace_exp")
     x1_list, pdf1_list = transform_laplace_exp(range_x, input_data1)
     x2_list, pdf2_list = transform_laplace_exp(range_x, input_data2)
     size_n = len(x1_list)
-    indices = np.linspace(0, 1, size_n)
+    indices = np.linspace(1/size_n, 1, size_n)
     x1_sm_list, pdf1_sm_list, x2_sm_list, pdf2_sm_list = [], [], [], []
-    x1_sm_list_all = [transform_scalar_mul(*transform_div(x, pdf, sum_x1, sum_pdf1), ind * (size_n-1)) for ind, x, pdf in zip(indices, x1_list, pdf1_list)]
-    x2_sm_list_all = [transform_scalar_mul(*transform_div(x, pdf, sum_x2, sum_pdf2), ind * (size_n-1)) for ind, x, pdf in zip(indices, x2_list, pdf2_list)]
+    x1_sm_list_all = [transform_scalar_mul(*transform_div(x, pdf, sum_x1, sum_pdf1), ind * size_n) for ind, x, pdf in zip(indices, x1_list, pdf1_list)]
+    x2_sm_list_all = [transform_scalar_mul(*transform_div(x, pdf, sum_x2, sum_pdf2), ind * size_n) for ind, x, pdf in zip(indices, x2_list, pdf2_list)]
     print("start transform_sum")
     for (x1_sm, pdf1_sm), (x2_sm, pdf2_sm) in zip(x1_sm_list_all, x2_sm_list_all):
         x1_sm_list.append(x1_sm)
         pdf1_sm_list.append(pdf1_sm)
         x2_sm_list.append(x2_sm)
         pdf2_sm_list.append(pdf2_sm)
-    print(x1_sm_list)
-    x1_argmax, pdf1_argmax = transform_sum(x1_sm_list, pdf1_sm_list)
-    x2_argmax, pdf2_argmax = transform_sum(x2_sm_list, pdf2_sm_list)
+    print("x1_sm_list: ", x1_sm_list)
+    x1_argmax, pdf1_argmax = transform_sum(x1_sm_list, pdf1_sm_list, integral=integral)
+    x2_argmax, pdf2_argmax = transform_sum(x2_sm_list, pdf2_sm_list, integral=integral)
+    print("x2_argmax: ", x2_argmax)
     return x1_argmax, pdf1_argmax, x2_argmax, pdf2_argmax
 
 def noisy_hist(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
