@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from transform_var import trasform_vars, trasform_var
 from noise_alg import laplace_func
 from scipy import integrate
-from utils import spline_eq, spline_func, calc_prob, compress_range, nonuniform_convolution, plt_sca
+from utils import spline_eq, spline_func, calc_prob, compress_range, nonuniform_convolution, plt_1d, plt_2d
 
 def transform_sum(vals, pdf_vals, integral="gauss"):
     """
@@ -54,7 +54,7 @@ def transform_sum(vals, pdf_vals, integral="gauss"):
                 val1 = x2
                 print("conv_x_range: ", conv_x_range)
                 # TODO: conv_x_rangeとresult_pdfのサイズが異なる
-                plt_sca(conv_x_range, result_pdf, "convolution")
+                plt_1d(conv_x_range, result_pdf, "convolution")
         assert conv_x_range.size == result_pdf.size
         return conv_x_range, result_pdf
     # 一つの確率密度関数の横軸の確率変数が等間隔ではない場合
@@ -118,7 +118,7 @@ def transform_log(range_x1, range_x2, pdf1, pdf2):
     range_y2, pdf_y2 = trasform_var(range_x2, pdf2, lambda x: np.log(x))
 
     # x_splined1/2はそれぞれ二次元配列
-    plt_sca(range_y1, pdf_y1, title="after transform_log", x2=range_y2, y2=pdf_y2)
+    plt_2d([range_y1, range_y2], [pdf_y1, pdf_y2], title="after transform_log")
     return range_y1, range_y2, pdf_y1, pdf_y2
 
 def transform_exp(range_x1, range_x2, pdf1, pdf2):
@@ -129,7 +129,7 @@ def transform_exp(range_x1, range_x2, pdf1, pdf2):
     range_y2, pdf_y2 = trasform_var(range_x2, pdf2, lambda x: np.exp(x))
 
     # x_splined1/2はそれぞれ二次元配列
-    plt_sca(range_y1, pdf_y1, title="after transform_exp", x2=range_y2, y2=pdf_y2)
+    plt_2d([range_y1, range_y2], [pdf_y1, pdf_y2], title="after transform_exp")
     return range_y1, range_y2, pdf_y1, pdf_y2
 
 def transform_laplace_exp(range_x, input_data):

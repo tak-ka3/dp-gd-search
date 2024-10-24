@@ -4,6 +4,7 @@ from scipy.integrate import quad
 import matplotlib.pyplot as plt
 import yaml
 import itertools
+from helpers import conditional_execution
 
 def calc_prob(x, pdf):
     """
@@ -142,25 +143,28 @@ def nonuniform_convolution(t_f, t_g, f, g, t_target, integral_way="gauss"):
         conv_result[i] = integral
     return conv_result
 
-def visualize(y):
+@conditional_execution("DEBUG")
+def plt_1d(x, y, title="Plot"):
     """
-    可視化
+    1種類の値列をプロットする
     """
-    x = np.arange(len(y))
-    plt.plot(x, y)
+    plt.scatter(x, y, color="red", s=0.2)
+    plt.title(title)
     plt.show()
+    return
 
-def plt_sca(x1, y1, title="Plot", x2 = None, y2 = None):
+@conditional_execution("DEBUG")
+def plt_2d(x_list, y_list, labels=None, title="Plot"):
     """
-    二つのグラフを散布図でプロットする
+    複数種類の値列をプロットする
     """
-    if x2 is None or y2 is None:
-        plt.scatter(x1, y1, color="red", s=0.2)
-        plt.title(title)
-        plt.show()
-        return
-    plt.scatter(x1, y1, color="red", s=0.2, label="x1")
-    plt.scatter(x2, y2, color="blue", s=0.2, label="x2")
+    if labels is None:
+        labels = [f"y{i}" for i in range(len(y_list))]
+    else:
+        if type(labels) != list or labels.size != len(y_list):
+            raise ValueError("labels should be a list and its size should be the same as the number of y_list")
+    for x, y, label in zip(x_list, y_list, labels):
+        plt.scatter(x, y, label=label, s=0.5)
     plt.title(title)
     plt.legend()
     plt.show()

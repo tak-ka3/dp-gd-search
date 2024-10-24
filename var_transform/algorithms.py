@@ -1,5 +1,5 @@
 import numpy as np
-from utils import plt_sca
+from utils import plt_2d
 from transform_func import transform_sum, transform_scalar_mul, transform_div, transform_log, transform_exp_beta_sum, transform_laplace_exp, transform_sum_after_func, transform_eq
 from matplotlib import pyplot as plt
 
@@ -14,11 +14,11 @@ def noisy_sum(range_x, input_data1, input_data2, integral="gauss"):
 
 def noisy_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
     x1, x2, pdf1, pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=beta, integral=integral)
-    plt_sca(x1, pdf1, title="after transform_exp_beta_sum", x2=x2, y2=pdf2)
+    plt_2d([x1, x2], [pdf1, pdf2], title="after transform_exp_beta_sum")
     x1_log, x2_log, pdf1_log, pdf2_log =  transform_log(x1, x2, pdf1, pdf2)
     x1_result, pdf1_result = transform_scalar_mul(x1_log, pdf1_log, 1/beta)
     x2_result, pdf2_result = transform_scalar_mul(x2_log, pdf2_log, 1/beta)
-    plt_sca(x1_result, pdf1_result, title="after transform_log", x2=x2_result, y2=pdf2_result)
+    plt_2d([x1_result, x2_result], [pdf1_result, pdf2_result], title="after transform_log")
     return x1_result, x2_result, pdf1_result, pdf2_result
 
 def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
