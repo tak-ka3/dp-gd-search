@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-from search import search_all, search_by_threshold
+from search import search_scalar_all, search_scalar_by_threshold
 from noise_alg import laplace_func
 from transform import transform
 from settings import Settings
@@ -22,10 +22,10 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
     plt.title("result of the probability density function")
     
     if settings.search["way"] == "all":
-        eps = search_all(x, y1, y2)
+        eps = search_scalar_all(x, y1, y2)
     elif settings.search["way"] == "threshold":
         th = settings.search["threshold"]
-        eps = search_by_threshold(x, y1, y2, th=th)
+        eps = search_scalar_by_threshold(x, y1, y2, th=th)
 
     # 結果を保存
     exec_time = datetime.now() - start_time
