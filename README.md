@@ -3,6 +3,7 @@
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install -r requirements.txt
+# DEBUG=trueを前につけて実行することで、可視化がなされる
 $ python var_transform/dp_test.py
 ```
 
