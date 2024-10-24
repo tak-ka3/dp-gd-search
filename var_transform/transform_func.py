@@ -102,6 +102,11 @@ def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="
 
     return sum_x1, sum_x2, sum_pdf1, sum_pdf2
 
+def transform_eq(range_x, input_data1, input_data2, integral="gauss"):
+    x1, pdf1 = trasform_vars(range_x, laplace_func(range_x, loc=input_data1), lambda x: x)
+    x2, pdf2 = trasform_vars(range_x, laplace_func(range_x, loc=input_data2), lambda x: x)
+    return x1, x2, pdf1, pdf2
+
 def transform_exp_beta_sum(range_x, input_data1, input_data2, beta, integral="gauss"):
     return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: np.exp(beta*x), integral=integral)
 

@@ -19,7 +19,6 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
     sample_num = settings.noisy_var["sampling_num"]
 
     if noise_func == laplace_func:
-        sample_num = 1000
         y_sample_data1 = [np.random.laplace(data, scale=1/0.1)  for data in input_data1 for _ in range(sample_num)]
         y_sample_data2 = [np.random.laplace(data, scale=1/0.1)  for data in input_data2 for _ in range(sample_num)]
         # range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2)), max(max(y_sample_data1), max(y_sample_data2)), 5000)
@@ -40,21 +39,21 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
                 pdf2 = f2(x_var)
                 return x_var, pdf1, pdf2
         elif x1.ndim == x2.ndim == pdf1.ndim == pdf2.ndim == 2: # 出力がスカラ値ではなく、ベクトルの場合
-            new_x, new_pdf1, new_pdf2 = np.array([]), np.array([]), np.array([]), np.array([])
-            for x1_item, x2_item in zip(x1, x2):
+            new_x, new_pdf1, new_pdf2 = np.empty((0, x1[0].size)), np.empty((0, x1[0].size)), np.empty((0, x1[0].size))
+            for ind, (x1_item, x2_item) in enumerate(zip(x1, x2)):
                 if x1_item.size == x2_item.size and (x1_item == x2_item).all():
-                    new_x = np.append(new_x, x1_item)
-                    new_pdf1 = np.append(new_pdf1, pdf1)
-                    new_pdf2 = np.append(new_pdf2, pdf2)
+                    new_x = np.vstack((new_x, x1_item))
+                    new_pdf1 = np.vstack((new_pdf1, pdf1[ind]))
+                    new_pdf2 = np.vstack((new_pdf2, pdf2[ind]))
                 else:
-                    f1 = interpolate.interp1d(x1_item, pdf1_item, kind="cubic")
-                    f2 = interpolate.interp1d(x2_item, pdf2_item, kind="cubic")
+                    f1 = interpolate.interp1d(x1_item, pdf1[ind], kind="cubic")
+                    f2 = interpolate.interp1d(x2_item, pdf2[ind], kind="cubic")
                     x_var = np.linspace(max(x1_item[0], x2_item[0]), min(x1_item[-1], x2_item[-1]), num=10000)
                     pdf1_item = f1(x_var)
                     pdf2_item = f2(x_var)
-                    new_x = np.append(new_x, x_var)
-                    new_pdf1 = np.append(new_pdf1, pdf1_item)
-                    new_pdf2 = np.append(new_pdf2, pdf2_item)
+                    new_x = np.vstack((new_x, x_var))
+                    new_pdf1 = np.vstack((new_pdf1, pdf1_item))
+                    new_pdf2 = np.vstack((new_pdf2, pdf2_item))
             return new_x, new_pdf1, new_pdf2
         else:
             raise NotImplementedError

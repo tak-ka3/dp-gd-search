@@ -43,4 +43,4 @@ def trasform_vars(X_vals: np.ndarray, X_pdf_vals: np.ndarray, transform_func) ->
         Y_val, Y_pdf_val = trasform_var(X_val, X_pdf_val, transform_func)
         Y_vals.append(Y_val)
         Y_pdf_vals.append(Y_pdf_val)
-    return Y_vals, Y_pdf_vals
+    return np.array(Y_vals), np.array(Y_pdf_vals)

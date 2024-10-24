@@ -3,6 +3,7 @@ from scipy import interpolate
 from scipy.integrate import quad
 import matplotlib.pyplot as plt
 import yaml
+import itertools
 
 def calc_prob(x, pdf):
     """
@@ -187,3 +188,21 @@ def read_settings(filename):
     """
     with open(filename, "r") as f:
         lines = f.readlines()
+
+def compute_products(x: np.ndarray) -> np.ndarray:
+    """
+    x = [
+        x1: [x11, x12, x13, ...],
+        x2: [x21, x22, x23, ...],
+        ...
+        xn: [xn1, xn2, xn3, ...]
+    ]
+    という二次元配列の各行から1つの要素を選ぶ全ての組み合わせに対して積を計算する
+    """
+    # itertools.productを使って各行から1つの要素を選ぶ全ての組み合わせを生成
+    combinations = itertools.product(*x)
+    
+    # 各組み合わせの積を計算
+    result = [np.prod(combination) for combination in combinations]
+    
+    return np.array(result)
