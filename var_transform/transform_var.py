@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from utils import spline_eq, spline_func, inv_calc, diff_calc, compress_range, calc_prob, visualize, plt_sca
+from utils import spline_eq, spline_func, inv_calc, diff_calc
 
 def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -22,7 +22,6 @@ def trasform_var(X_val: np.ndarray, X_pdf_val: np.ndarray, transform_func) -> tu
     dx_dy = diff_calc(x_splined, y_splined) # x_splined(=等間隔ではない)をもとにしたdx_dy
     # 改めてスプライン補間によってX軸を揃える
     start_ind, end_ind, X_pdf_val_new = spline_func(X_val, X_pdf_val, y_splined)
-    # plt_sca(x_splined[start_ind:end_ind], X_pdf_val_new, "after spline", x_splined[start_ind:end_ind], [laplace_func(np.log(x), 0) for x in x_splined[start_ind:end_ind]])
     Y_pdf_val = X_pdf_val_new * np.abs(dx_dy[start_ind:end_ind]) # 要素ごとに掛ける
     return x_splined[start_ind:end_ind], Y_pdf_val
 
