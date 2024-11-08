@@ -52,7 +52,42 @@ def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss")
     print("x2_argmax: ", x2_argmax)
     return x1_argmax, x2_argmax, pdf1_argmax, pdf2_argmax
 
+def noisy_max_cdf(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
+    """
+    累積分布関数を用いた最大値出力アルゴリズム
+    消費されるのは、eps*|Q|
+    """
+    eps = 0.1 
+    pdf1 = np.zeros(range_x.size)
+    for x_i, x in enumerate(range_x):
+        prob = 0
+        for i in range(0, input_data1.size):
+            f = laplace_cdf(x, loc=input_data1[i], eps=eps)
+            for j in range(0, input_data1.size):
+                if i == j:
+                    continue
+                f *= laplace_cdf(x, loc=input_data1[j], eps=eps)
+            prob += f
+        pdf1[x_i] = prob
+   
+    pdf2 = np.zeros(range_x.size)
+    for x_i, x in enumerate(range_x):
+        prob = 0
+        for i in range(0, input_data2.size):
+            f = laplace_cdf(x, loc=input_data2[i], eps=eps)
+            for j in range(0, input_data2.size):
+                if i == j:
+                    continue
+                f *= laplace_cdf(x, loc=input_data2[j], eps=eps)
+            prob += f
+        pdf2[x_i] = prob
+    return range_x, range_x, pdf1, pdf2
+
 def noisy_arg_max_cdf(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
+    """
+    累積分布関数を用いた最大値インデックス探索アルゴリズム
+    アルゴリズムで消費されるプライバシーコストをeps/2とすると、全体として消費されるプライバシーコストはepsとなる
+    """
     eps = 0.1/2
     # 入力のサイズ = インデックスの最大値
     input_length = input_data1.size
@@ -96,5 +131,6 @@ alg_dict = {
     "noisy_max": noisy_max,
     "noisy_arg_max": noisy_arg_max,
     "noisy_hist": noisy_hist,
+    "noisy_max_cdf": noisy_max_cdf,
     "noisy_arg_max_cdf": noisy_arg_max_cdf
 }
