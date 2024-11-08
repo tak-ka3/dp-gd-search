@@ -19,8 +19,8 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
     sample_num = settings.noisy_var["sampling_num"]
 
     if noise_func == laplace_func:
-        y_sample_data1 = [np.random.laplace(data, scale=1/0.1)  for data in input_data1 for _ in range(sample_num)]
-        y_sample_data2 = [np.random.laplace(data, scale=1/0.1)  for data in input_data2 for _ in range(sample_num)]
+        # y_sample_data1 = [np.random.laplace(data, scale=1/0.1)  for data in input_data1 for _ in range(sample_num)]
+        # y_sample_data2 = [np.random.laplace(data, scale=1/0.1)  for data in input_data2 for _ in range(sample_num)]
         # range_x = np.linspace(min(min(y_sample_data1), min(y_sample_data2)), max(max(y_sample_data1), max(y_sample_data2)), 5000)
 
         dx = (upper_bound - lower_bound) / sample_num

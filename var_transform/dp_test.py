@@ -5,16 +5,13 @@ from search import search_scalar_all, search_scalar_by_threshold, search_vec_all
 from noise_alg import laplace_func
 from transform import transform
 from settings import Settings
+from input_generator import input_generator
 import yaml
 import os
 from datetime import datetime
 from utils import compute_products, plt_2d
 
-def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
-    start_time = datetime.now()
-    with open("settings.yaml") as f:
-        data = yaml.safe_load(f)
-    settings = Settings(**data)
+def dp_test(input_data1: np.ndarray, input_data2: np.ndarray, settings: Settings) -> np.float64:
     x, y1, y2 = transform(input_data1, input_data2, laplace_func, settings)
     
     if x.ndim == y1.ndim == y2.ndim == 1:
@@ -32,23 +29,10 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray) -> np.float64:
         x_flattened = compute_products(x)
         eps = search_scalar_all(x_flattened, pdf1, pdf2)
         
-        if settings.search["way"] == "all":
-            eps = search_vec_all(x, y1, y2)
+        # if settings.search["way"] == "all":
+        #     eps = search_vec_all(x, y1, y2)
     else:
         raise NotImplementedError
-
-    # 結果を保存
-    exec_time = datetime.now() - start_time
-    now = datetime.now()
-    formatted_now = now.strftime("%Y-%m-%d_%H:%M:%S")
-    os.makedirs(f"experiments/{settings.algorithm}", exist_ok=True)
-    dir_path = f"experiments/{settings.algorithm}/{formatted_now}"
-    os.makedirs(dir_path, exist_ok=True)
-    plt.savefig(f"{dir_path}/result.png")
-    data["result"] = {"eps": eps.item(), "time(s)": exec_time.total_seconds()}
-    data["input"] = {"data1": input_data1.tolist(), "data2": input_data2.tolist()}
-    with open(f"{dir_path}/result.yaml", "w") as f:
-        yaml.dump(data, f, encoding='utf-8', allow_unicode=True)
     
     return eps
 
@@ -58,8 +42,35 @@ if __name__ == "__main__":
     隣接したデータセット同士の出力を用意する
     以下のような場合だと、[-80, 80]だとうまくいった
     """
-    x_data1 = np.array([1.0, 3.0, 5.0, 7.0])
-    x_data2 = np.array([1.5, 2.5, 5.0, 7.0])
-    eps = dp_test(x_data1, x_data2)
+    start_time = datetime.now()
+    with open("settings.yaml") as f:
+        data = yaml.safe_load(f)
+    settings = Settings(**data)
 
-    print("estimated eps: ", eps)
+    max_eps = 0
+    max_input = []
+    tmp_eps = []
+    input_list = input_generator("1" if settings.algorithm == "noisy_hist" else "inf")
+    # input_list.insert(0, [[1.0, 3.0, 5.0, 7.0], [2.0, 4.0, 6.0, 8.0]])
+    for input_data1, input_data2 in input_list:
+        eps = dp_test(np.array(input_data1), np.array(input_data2), settings)
+        tmp_eps.append(eps)
+        if eps > max_eps:
+            max_input = [input_data1, input_data2]
+            max_eps = eps
+        # print("tmp eps: ", eps)
+    
+    # 結果を保存
+    exec_time = datetime.now() - start_time
+    now = datetime.now()
+    formatted_now = now.strftime("%Y-%m-%d_%H:%M:%S")
+    os.makedirs(f"experiments/{settings.algorithm}", exist_ok=True)
+    dir_path = f"experiments/{settings.algorithm}/{formatted_now}"
+    os.makedirs(dir_path, exist_ok=True)
+    plt.savefig(f"{dir_path}/result.png")
+    data["result"] = {"eps": max_eps.item(), "time(s)": exec_time.total_seconds()}
+    data["input"] = {"data1": max_input[0], "data2": max_input[1]}
+    with open(f"{dir_path}/result.yaml", "w") as f:
+        yaml.dump(data, f, encoding='utf-8', allow_unicode=True)
+
+    # print("tmp eps: ", tmp_eps)

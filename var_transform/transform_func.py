@@ -26,21 +26,15 @@ def transform_sum(vals, pdf_vals, integral="gauss"):
     start_val = val1[0]
     dx = val1[1] - val1[0]
 
-    print(val1[2] - val1[1])
-    print(val1[1] - val1[0])
     if val1[2] - val1[1] == val1[1] - val1[0]:
         # 各PDFを順次畳み込み
         for val2, pdf in zip(vals[1:], pdf_vals[1:]):
             # TODO: ifとelseの処理が重複している
             if dx == val2[1] - val2[0]:
-                print("start conv 1")
                 result_pdf = np.convolve(result_pdf, pdf, mode='full') * dx
                 start_val = conv_x_range[0] + val2[0]
                 conv_x_size = conv_x_size + val2.size - 1
-                print("size: ", len(result_pdf))
-                print("size: ", conv_x_size)
                 conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
-                print("size(conv_x_range): ", len(conv_x_range))
                 val1 = val2
             else:
                 f2 = interpolate.interp1d(val2, pdf, kind="cubic")
@@ -52,7 +46,6 @@ def transform_sum(vals, pdf_vals, integral="gauss"):
                 conv_x_size = conv_x_size + x2.size - 1
                 conv_x_range = np.arange(start_val, start_val + dx*conv_x_size, dx)
                 val1 = x2
-                print("conv_x_range: ", conv_x_range)
                 # TODO: conv_x_rangeとresult_pdfのサイズが異なる
                 plt_1d(conv_x_range, result_pdf, "convolution")
         assert conv_x_range.size == result_pdf.size
@@ -76,9 +69,20 @@ def transform_sum(vals, pdf_vals, integral="gauss"):
             np_vals = np.unique(np.array(vals))
             split_num = np_vals.size // val1.size
             np_vals = np_vals[::split_num]
+            # print("conv_prob1: ", calc_prob(val1, result_pdf))
+            # print("conv_prob2: ", calc_prob(val2, pdf))
+            # plt.scatter(val1, result_pdf, s=0.2, label="1")
+            # plt.scatter(val2, pdf, s=0.2, label="2")
+            # plt.title("before conv")
+            # plt.legend()
+            # plt.show()
             conv_result = nonuniform_convolution(val1, val2, result_pdf, pdf, np_vals, integral_way=integral)
-            print("end conv")
-            print("conv_prob: ", calc_prob(np_vals, conv_result))
+            # plt.scatter(np_vals, conv_result, s=0.2)
+            # plt.title("in the middle of conv")
+            # plt.show()
+            # print("end conv")
+            # print("conv_prob: ", calc_prob(np_vals, conv_result))
+            # exit()
             result_pdf = conv_result
             val1 = np_vals
         assert val1.size == result_pdf.size
@@ -95,8 +99,8 @@ def transform_sum_after_func(range_x, input_data1, input_data2, func, integral="
     if type(transformed_pdf1[0]) == np.ndarray:
         sum_x1, sum_pdf1 = transform_sum(x_splined1, transformed_pdf1, integral=integral)
         sum_x2, sum_pdf2 = transform_sum(x_splined2, transformed_pdf2, integral=integral)
-        print("prob_x1: ", calc_prob(sum_x1, sum_pdf1))
-        print("prob_x2: ", calc_prob(sum_x2, sum_pdf2))
+        # print("prob_x1: ", calc_prob(sum_x1, sum_pdf1))
+        # print("prob_x2: ", calc_prob(sum_x2, sum_pdf2))
     else:
         pass
 
