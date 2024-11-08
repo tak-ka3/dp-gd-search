@@ -1,4 +1,4 @@
-algorithm: "noisy_arg_max_cdf" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)", "noisy_arg_max_cdf"
+algorithm: "noisy_max_cdf" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)", "noisy_max_cdf", "noisy_arg_max_cdf"
 noisy_var: 
   lower: -60
   upper: 80
