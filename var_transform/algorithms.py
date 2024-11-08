@@ -11,11 +11,11 @@ def noisy_sum(range_x, input_data1, input_data2, integral="gauss"):
     """
     配列の要素に1をかけて合計をとる関数
     """
-    eps = 0.1
+    eps = 0.1 # TODO: アルゴリズム内で使用されるεの値だが、laplace_func内でそれが定義されている
     return transform_sum_after_func(range_x, input_data1, input_data2, lambda x: x)
 
 def noisy_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
-    eps = 0.1
+    eps = 0.1 # TODO: アルゴリズム内で使用されるεの値だが、laplace_func内でそれが定義されている
     x1, x2, pdf1, pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=beta, integral=integral)
     plt_2d([x1, x2], [pdf1, pdf2], title="after transform_exp_beta_sum")
     x1_log, x2_log, pdf1_log, pdf2_log =  transform_log(x1, x2, pdf1, pdf2)
@@ -29,7 +29,7 @@ def noisy_arg_max(range_x, input_data1, input_data2, beta=2.0, integral="gauss")
     配列の中の最大の要素を持つインデックスを返すアルゴリズム
     TODO: エラーが出るの修正中
     """
-    eps = 0.1
+    eps = 0.1 # TODO: アルゴリズム内で使用されるεの値だが、laplace_func内でそれが定義されている
     print("start transform_arg_max")
     sum_x1, sum_x2, sum_pdf1, sum_pdf2 = transform_exp_beta_sum(range_x, input_data1, input_data2, beta=1.0, integral=integral)
     print("start transform_laplace_exp")
@@ -87,9 +87,8 @@ def noisy_arg_max_cdf(range_x, input_data1, input_data2, beta=2.0, integral="gau
 def noisy_hist(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
     """
     ノイズ付きヒストグラムのアルゴリズム
-    TODO: 実装中
     """
-    eps = 0.1
+    eps = 0.1 # TODO: アルゴリズム内で使用されるεの値だが、laplace_func内でそれが定義されている
     return transform_eq(range_x, input_data1, input_data2)
 
 alg_dict = {
