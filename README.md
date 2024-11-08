@@ -19,7 +19,7 @@ noisy_var:
   sampling_num: 5000
 # 積分の方法
 integral: "gauss" # "gauss"(ガウス積分), "trapz"(台形近似)
-# εの探索の仕方。allは全探索、thresholdは確率密度の値の下位${threshold}の割合以下の値は無視する探索。
+# εの探索の仕方。allは全探索、thresholdは確率密度の値の下位${threshold}の割合以下の値は無視する探索。noisy_max, noisy_arg_maxの場合は"all"を設定する。
 search: 
   way: "all" # "all", "threshold"
   threshold: 0.1

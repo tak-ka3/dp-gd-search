@@ -1,9 +1,9 @@
-algorithm: "noisy_sum" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)"
+algorithm: "noisy_max_cdf" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)", "noisy_max_cdf", "noisy_arg_max_cdf"
 noisy_var: 
   lower: -60
   upper: 80
   sampling_num: 5000
 integral: "gauss" # "gauss"(ガウス積分), "trapz"(台形近似)
 search: 
-  way: "threshold" # "all", "threshold"
+  way: "all" # "all", "threshold"
   threshold: 0.1
