@@ -38,7 +38,7 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
                 pdf1 = f1(x_var)
                 pdf2 = f2(x_var)
                 return x_var, pdf1, pdf2
-        elif x1.ndim == x2.ndim == pdf1.ndim == pdf2.ndim == 2: # 出力がスカラ値ではなく、ベクトルの場合
+        elif x1.ndim == x2.ndim == pdf1.ndim == pdf2.ndim == 2: # 出力がスカラ値ではなくベクトルであり、それぞれの要素が独立であり、その確率がわかっている場合
             new_x, new_pdf1, new_pdf2 = np.empty((0, x1[0].size)), np.empty((0, x1[0].size)), np.empty((0, x1[0].size))
             for ind, (x1_item, x2_item) in enumerate(zip(x1, x2)):
                 if x1_item.size == x2_item.size and (x1_item == x2_item).all():
@@ -55,6 +55,9 @@ def transform(input_data1: np.ndarray, input_data2: np.ndarray, noise_func, sett
                     new_pdf1 = np.vstack((new_pdf1, pdf1_item))
                     new_pdf2 = np.vstack((new_pdf2, pdf2_item))
             return new_x, new_pdf1, new_pdf2
+        elif x1.ndim == x2.ndim == 2 and pdf1.ndim == pdf2.ndim == 1: # 出力がスカラ値ではなくベクトルであり、出力ベクトルごとに確率がわかっている場合
+            if np.array_equal(x1, x2):
+                return x1, pdf1, pdf2
         else:
             raise NotImplementedError
 

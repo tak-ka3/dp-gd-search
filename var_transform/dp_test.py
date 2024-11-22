@@ -31,6 +31,8 @@ def dp_test(input_data1: np.ndarray, input_data2: np.ndarray, settings: Settings
         
         # if settings.search["way"] == "all":
         #     eps = search_vec_all(x, y1, y2)
+    elif x.ndim == 2 and y1.ndim == y2.ndim == 1: # 出力がスカラ値ではなく、ベクトルの場合 (e.g. Noisy_SVT)
+        eps = search_scalar_all(x, y1, y2)
     else:
         raise NotImplementedError
     
@@ -50,7 +52,7 @@ if __name__ == "__main__":
     max_eps = 0
     max_input = []
     tmp_eps = []
-    input_list = input_generator("1" if settings.algorithm == "noisy_hist" else "inf")
+    input_list = input_generator("1" if settings.algorithm == "noisy_hist" else "inf", size=settings.input["size"])
     # input_list.insert(0, [[1.0, 3.0, 5.0, 7.0], [2.0, 4.0, 6.0, 8.0]])
     for input_data1, input_data2 in input_list:
         eps = dp_test(np.array(input_data1), np.array(input_data2), settings)
@@ -58,7 +60,7 @@ if __name__ == "__main__":
         if eps > max_eps:
             max_input = [input_data1, input_data2]
             max_eps = eps
-        # print("tmp eps: ", eps)
+        print("tmp eps: ", eps)
     
     # 結果を保存
     exec_time = datetime.now() - start_time
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     os.makedirs(dir_path, exist_ok=True)
     plt.savefig(f"{dir_path}/result.png")
     data["result"] = {"eps": max_eps.item(), "time(s)": exec_time.total_seconds()}
-    data["input"] = {"data1": max_input[0], "data2": max_input[1]}
+    data["input"] = {"data1": max_input[0], "data2": max_input[1], "size": settings.input["size"]}
     with open(f"{dir_path}/result.yaml", "w") as f:
         yaml.dump(data, f, encoding='utf-8', allow_unicode=True)
 
