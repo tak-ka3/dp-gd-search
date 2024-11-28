@@ -1,7 +1,9 @@
-algorithm: "noisy_arg_max_cdf" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)", "noisy_max_cdf", "noisy_arg_max_cdf"
+algorithm: "noisy_output_based_svt" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)", "noisy_max_cdf", "noisy_arg_max_cdf", "noisy_output_based_svt"
+input:
+  size: 10
 noisy_var: 
-  lower: -60
-  upper: 80
+  lower: -32
+  upper: 40
   sampling_num: 1000
 integral: "gauss" # "gauss"(ガウス積分), "trapz"(台形近似)
 search: 
