@@ -3,6 +3,8 @@ from utils import plt_2d
 from transform_func import transform_sum, transform_scalar_mul, transform_div, transform_log, transform_exp_beta_sum, transform_laplace_exp, transform_sum_after_func, transform_eq
 from matplotlib import pyplot as plt
 from noise_alg import laplace_func, laplace_cdf
+import itertools
+from scipy.integrate import dblquad, quad
 
 def get_alg(func_name):
     return alg_dict[func_name]
@@ -126,11 +128,117 @@ def noisy_hist(range_x, input_data1, input_data2, beta=2.0, integral="gauss"):
     eps = 0.1 # TODO: アルゴリズム内で使用されるεの値だが、laplace_func内でそれが定義されている
     return transform_eq(range_x, input_data1, input_data2)
 
+def noisy_svt(range_x, input_data1, input_data2, beta=2.0, integral="trapz"):
+    """
+    ノイズ付きSVTのアルゴリズム
+    """
+    eps = 0.1
+    N = 1
+    T = 0.5 # 2.5でも良い
+    input_size = len(input_data1)
+    ranges = [range_x] * input_size  # 各ループの範囲を定義
+    # ノイズ付与後の確率変数の組み合わせを全探索
+    input_comb = list(itertools.product(*ranges))
+    output_dir_list = []
+    for input_data in (input_data1, input_data2):
+        output_dir = {}
+        sens = 1
+        for ita1 in range_x:
+            for pr_vars in input_comb:
+                output = svt(pr_vars, ita1, N, T)
+                ita1_pr = laplace_func(ita1, loc=T, sensitivity=sens, eps=eps/2)
+                ita2_pr = 1
+                for i, pr_var in enumerate(pr_vars):
+                    ita2_pr *= laplace_func(pr_var, loc=input_data[i], sensitivity=sens, eps=eps/(4*N))
+                pr = ita1_pr * ita2_pr
+                output_tuple = tuple(output)
+                if output_tuple not in output_dir:
+                    output_dir[output_tuple] = pr
+                else:
+                    output_dir[output_tuple] += pr
+        output_dir_list.append(output_dir)
+    
+    output_dir1, output_dir2 = output_dir_list
+    x1, x2 = np.array(list(output_dir1.keys())), np.array(list(output_dir2.keys()))
+    pdf1, pdf2 = np.array(list(output_dir1.values())), np.array(list(output_dir2.values()))
+    return x1, x2, pdf1, pdf2
+
+# 閾値ごとにノイズの出現確率(=ρ)を計算する
+def calc_noise_per_threshold(x, output, query, eps, T, N):
+    pr = 1
+    for i, val in enumerate(output):
+        if val == 0:
+            pr *= laplace_cdf(T-query[i]-x, loc=0, eps=eps/(4*N))
+        elif val == 1:
+            pr *= 1 - laplace_cdf(T-query[i]-x, loc=0, eps=eps/(4*N))
+        else:
+            break
+    return pr*laplace_func(x, loc=0, eps=0.1/2)
+
+def noisy_output_based_svt(range_x, input_data1, input_data2, beta=2.0, integral="trapz"):
+    """
+    出力の結果から逆算して、その出力を得るための入力の範囲を先に求め、確率をまとめて計算することで効率化を図る
+    """
+    eps = 0.1
+    N = 1 # 配列の中のTrue(=1)の数
+    T = 1 # 1.5, 2.5でも良い
+    # 出力パターンを洗い出す
+    # 制約としては1の数がN以下であること。1がN個ある場合はそれ以降は-1になる。0と-1が隣り合うことはない。
+    input_size = len(input_data1)
+    # TODO: 出力パターンは求めたことにする
+    if input_size == 5:
+        output_patters = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 1], [0, 0, 0, 1, -1], [0, 0, 1, -1, -1], [0, 1, -1, -1, -1], [1, -1, -1, -1, -1]]
+    elif input_size == 10:
+        output_patters = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, -1],
+            [0, 0, 0, 0, 0, 0, 0, 1, -1, 1],
+            [0, 0, 0, 0, 0, 0, 1, -1, 1, -1],
+            [0, 0, 0, 0, 0, 1, -1, 1, -1, 1],
+            [0, 0, 0, 0, 1, -1, 1, -1, 1, -1],
+            [0, 0, 0, 1, -1, 1, -1, 1, -1, 1],
+            [0, 0, 1, -1, 1, -1, 1, -1, 1, -1],
+            [0, 1, -1, 1, -1, 1, -1, 1, -1, 1],
+            [1, -1, 1, -1, 1, -1, 1, -1, 1, -1]
+        ]
+    else:
+        raise ValueError("Invalid input size")
+    # 確率密度関数の畳み込みを用いて計算する
+    output_pr_dir1 = {}
+    output_pr_dir2 = {}
+    for output in output_patters:
+        output_pr_dir1[tuple(output)] = 0
+        output_pr_dir2[tuple(output)] = 0
+        pr1 = quad(calc_noise_per_threshold, -np.inf, np.inf, args=(output, input_data1, eps, T, N))[0]
+        pr2 = quad(calc_noise_per_threshold, -np.inf, np.inf, args=(output, input_data2, eps, T, N))[0]
+        output_pr_dir1[tuple(output)] = pr1
+        output_pr_dir2[tuple(output)] = pr2
+    x1, x2 = np.array(list(output_pr_dir1.keys())), np.array(list(output_pr_dir2.keys()))
+    pdf1, pdf2 = np.array(list(output_pr_dir1.values())), np.array(list(output_pr_dir2.values()))
+    return x1, x2, pdf1, pdf2
+
+def svt(query, ita1, N=1, T=2.5):
+    output = []
+    T_tilde = T + ita1
+    count = 0
+    for q in query:
+        if count >= N:
+            output.append(-1)
+        elif q >= T_tilde:
+            count += 1
+            output.append(1)
+        else:
+            output.append(0)
+    return output
+
 alg_dict = {
     "noisy_sum": noisy_sum,
     "noisy_max": noisy_max,
     "noisy_arg_max": noisy_arg_max,
     "noisy_hist": noisy_hist,
     "noisy_max_cdf": noisy_max_cdf,
-    "noisy_arg_max_cdf": noisy_arg_max_cdf
+    "noisy_arg_max_cdf": noisy_arg_max_cdf,
+    "noisy_svt": noisy_svt,
+    "noisy_output_based_svt": noisy_output_based_svt
 }

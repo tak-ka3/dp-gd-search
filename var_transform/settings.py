@@ -13,8 +13,13 @@ class Search:
     threshold: float
 
 @dataclass
+class Input:
+    size: int
+
+@dataclass
 class Settings:
     algorithm: str
     noisy_var: NoisyVar
     integral: str
     search: Search
+    input: Input

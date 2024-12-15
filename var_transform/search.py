@@ -21,7 +21,7 @@ def search_scalar_all(x: np.ndarray, y1: np.ndarray, y2: np.ndarray) -> np.float
     確率密度の比率の最大値を全探索によって求める
     """
     max_ratio = 0
-    for i in range(x.size):
+    for i in range(x.shape[0]):
         ratio = y1[i] / y2[i] if y1[i] > y2[i] else y2[i] / y1[i]
         if max_ratio < ratio:
             max_ratio = ratio
