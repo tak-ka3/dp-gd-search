@@ -60,7 +60,7 @@ if __name__ == "__main__":
         if eps > max_eps:
             max_input = [input_data1, input_data2]
             max_eps = eps
-        print("tmp eps: ", eps)
+        # print("tmp eps: ", eps)
     
     # 結果を保存
     exec_time = datetime.now() - start_time
