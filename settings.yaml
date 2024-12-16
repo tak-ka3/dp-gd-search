@@ -1,4 +1,4 @@
-algorithm: "noisy_output_based_svt" # "noisy_sum", "noisy_max", "noisy_hist", "noisy_arg_max(実装中)", "noisy_max_cdf", "noisy_arg_max_cdf", "noisy_output_based_svt"
+algorithm: "noisy_output_based_svt" # "noisy_sum", "noisy_max_cdf", "noisy_hist", "noisy_arg_max_cdf", "noisy_max_cdf", "noisy_output_based_svt"
 input:
   size: 10
 noisy_var: 
